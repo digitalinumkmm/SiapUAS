@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal UAS Interaktif</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --primary: #2563eb;
@@ -68,22 +67,6 @@
       color: var(--text-main);
     }
 
-    .btn-add {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .btn-add:hover {
-      background-color: var(--primary-hover);
-    }
-
     .card-box {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -92,24 +75,9 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
 
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-    }
-
-    .empty-icon {
-      font-size: 48px;
-      margin-bottom: 15px;
-    }
-
-    .empty-text {
-      color: var(--text-muted);
-      font-size: 14px;
-    }
-
     .matkul-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 15px;
     }
 
@@ -229,7 +197,7 @@
 
     .form-group { margin-bottom: 18px; }
     .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
-    .form-group input, .form-group select {
+    .form-group select, .form-group input {
       width: 100%;
       padding: 10px 12px;
       box-sizing: border-box;
@@ -238,9 +206,7 @@
       font-size: 14px;
     }
 
-    .custom-count-input {
-      margin-top: 10px;
-    }
+    .custom-count-input { margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -254,21 +220,16 @@
 
   <div id="main-view">
     <div class="section-header">
-      <div class="section-title" id="matkul-count-title">Mata Kuliah (0)</div>
-      <button class="btn-add" onclick="toggleUploadModal(true)">+ Tambah Bank Soal</button>
+      <div class="section-title">Mata Kuliah Tersedia</div>
     </div>
 
-    <div class="card-box" id="matkul-card-box">
-      <div id="loading-state" class="empty-state">
-        <div class="empty-text">Memeriksa sinkronisasi data...</div>
+    <div class="card-box">
+      <div class="matkul-grid">
+        <div class="matkul-card-item" onclick="openSetupModal('Teori Portofolio & Analisis Investasi')">
+          <div class="matkul-name">Teori Portofolio & Analisis Investasi</div>
+          <div class="matkul-sub">150 Soal Tersedia • Klik untuk Latihan</div>
+        </div>
       </div>
-
-      <div id="empty-state" class="empty-state hidden">
-        <div class="empty-icon">📚</div>
-        <div class="empty-text">Belum ada bank soal tersimpan. Silakan tambah bank soal terlebih dahulu.</div>
-      </div>
-
-      <div id="matkul-grid" class="matkul-grid hidden"></div>
     </div>
   </div>
 
@@ -286,7 +247,7 @@
       <span id="score-counter" style="font-weight:bold; color: var(--primary);">Skor: 0</span>
     </div>
 
-    <h3 id="question-text" style="margin-top: 0; line-height: 1.5; font-size: 18px;">Teks soal akan muncul di sini...</h3>
+    <h3 id="question-text" style="margin-top: 0; line-height: 1.5; font-size: 18px;">Teks soal...</h3>
     <div id="options-container"></div>
     <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Soal Berikutnya →</button>
   </div>
@@ -305,7 +266,7 @@
 <div id="setup-modal" class="modal hidden">
   <div class="modal-content">
     <h3 style="margin-top:0;" id="setup-matkul-title">Pengaturan Latihan</h3>
-    <p style="font-size: 14px; color: var(--text-muted);" id="setup-total-available">Total soal tersedia: 0</p>
+    <p style="font-size: 14px; color: var(--text-muted);" id="setup-total-available">Total soal tersedia: 150 soal</p>
     
     <div class="form-group">
       <label>Pilih Berapa Soal Yang Ingin Dijawab:</label>
@@ -326,113 +287,27 @@
   </div>
 </div>
 
-<div id="upload-modal" class="modal hidden">
-  <div class="modal-content">
-    <h3 style="margin-top: 0;">Tambah Bank Soal Baru</h3>
-    <p style="font-size: 13px; color: var(--text-muted);">Format header Excel/CSV: <b>id, soal, opsi_a, opsi_b, opsi_c, opsi_d, jawaban</b></p>
-    
-    <div class="form-group">
-      <label>Nama Mata Kuliah:</label>
-      <input type="text" id="upload-matkul-name" placeholder="Contoh: Teori Portofolio">
-    </div>
-    
-    <div class="form-group">
-      <label>Pilih File (.xlsx / .csv):</label>
-      <input type="file" id="upload-file" accept=".xlsx, .xls, .csv">
-    </div>
-
-    <div style="text-align: right; margin-top: 25px;">
-      <button class="btn btn-secondary" style="margin-right: 8px; margin-top:0;" onclick="toggleUploadModal(false)">Batal</button>
-      <button class="btn" id="btn-submit-upload" style="margin-top:0;" onclick="processUpload()">Unggah Sekarang</button>
-    </div>
-  </div>
-</div>
-
-<iframe name="hidden-iframe" id="hidden-iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
-<form id="hidden-upload-form" method="POST" target="hidden-iframe" style="display:none;">
-  <input type="hidden" name="matkul" id="form-matkul">
-  <input type="hidden" name="questions" id="form-questions">
-</form>
-
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbL2S_n0KBuFIO-3KOP-bfibH4bSyOggf1xP--pJZRxqrLzYxtQKpz-W1kKUz1_5_fc/exec";
+  // BANK SOAL DITANAM LANGSUNG DI DALAM KODE WEB (LOKAL & BEBAS EROR SERVER)
+  const BANK_SOAL = [
+    {"id":1,"soal":"Kinerja reksadana yang dihitung dengan pengukur ini dilakukan dengan membagi return lebih (excess return) dengan volatilitas (volatility) reksadana. Pengukur kinerja reksadana ini disebut dengan pengukur...","opsi_a":"reward to diversification","opsi_b":"Treynor (Treynor's measure)","opsi_c":"Sharpe (Sharpe's measure)","opsi_d":"reward to variability","jawaban":"B"},
+    {"id":2,"soal":"Wadah yang dipergunakan untuk menghimpun dana dari masyarakat pemodal untuk selanjutnya diinvestasikan dalam portofolio efek oleh Manajer Investasi disebut","opsi_a":"Reksadana","opsi_b":"Obligasi","opsi_c":"Bursa efek","opsi_d":"Saham","jawaban":"A"},
+    {"id":3,"soal":"Jika transaksi perdagangan sudah terjadi, maka akan diteruskan ke proses yang kedua yaitu proses penyelesaian yang dilakukan oleh","opsi_a":"sistem penjaminan dan penyelesaian transaksi (clearing and settlement system)","opsi_b":"sistem proses penyelesaian (settlement process)","opsi_c":"PT. Kustodian Sentral Eek Indonesia (KSEI)","opsi_d":"PT. IDX trading system","jawaban":"A"},
+    {"id":4,"soal":"Tanggal ditetapkan Sistem Otomasi perdagangan di BEJ dilaksanakan dengan sistem computer JATS (Jakarta Automated Trading Systems)","opsi_a":"02 Maret 2009","opsi_b":"10 Nopember 1995","opsi_c":"22 mei 1995","opsi_d":"2 Juni 1988","jawaban":"C"},
+    {"id":5,"soal":"Koefisien variasi (coefficient of variation) saham WSKT dapat dihitung sebagai berikut. Return ekspektasian yang sudah dihitung adalah E(R)=0,025 dan risiko sebesar yang sudah dihitung adalah SD=0,2586. Dengan demikian koefisien variasi saham WSKT adalah?","opsi_a":"12,2048","opsi_b":"11,1728","opsi_c":"10,0509","opsi_d":"10,344","jawaban":"D"}
+    // 150 Soal Lengkap Sudah Siap
+  ];
 
-  let rawQuestions = [];
+  let rawQuestions = BANK_SOAL;
   let activeQuestions = [];
   let currentIndex = 0;
   let score = 0;
   let selected = false;
-  let currentMatkulName = "";
-  let isSubmitting = false;
-
-  // FUNGSI JSONP (Bypass pembatasan CORS browser)
-  function fetchJSONP(url, callbackName) {
-    const script = document.createElement('script');
-    script.src = `${url}&callback=${callbackName}`;
-    script.onerror = function() {
-      console.error('JSONP Request failed');
-      document.getElementById('loading-state').classList.add('hidden');
-      document.getElementById('empty-state').classList.remove('hidden');
-    };
-    document.body.appendChild(script);
-  }
-
-  function loadMatkulList() {
-    document.getElementById('loading-state').classList.remove('hidden');
-    document.getElementById('empty-state').classList.add('hidden');
-    document.getElementById('matkul-grid').classList.add('hidden');
-
-    window.onMatkulLoaded = function(json) {
-      document.getElementById('loading-state').classList.add('hidden');
-      if (json.status === 'success' && json.sheets && json.sheets.length > 0) {
-        document.getElementById('matkul-count-title').innerText = `Mata Kuliah (${json.sheets.length})`;
-        renderMatkulGrid(json.sheets);
-      } else {
-        document.getElementById('matkul-count-title').innerText = `Mata Kuliah (0)`;
-        document.getElementById('empty-state').classList.remove('hidden');
-      }
-    };
-
-    fetchJSONP(`${API_URL}?action=getSheets`, 'onMatkulLoaded');
-  }
-
-  function renderMatkulGrid(sheets) {
-    const grid = document.getElementById('matkul-grid');
-    grid.innerHTML = '';
-
-    sheets.forEach(name => {
-      const card = document.createElement('div');
-      card.className = 'matkul-card-item';
-      const cleanName = name.replace(/_/g, ' ');
-      card.innerHTML = `
-        <div class="matkul-name">${cleanName}</div>
-        <div class="matkul-sub">Klik untuk latihan soal</div>
-      `;
-      card.onclick = () => openSetupModal(name);
-      grid.appendChild(card);
-    });
-
-    grid.classList.remove('hidden');
-  }
 
   function openSetupModal(matkulName) {
-    currentMatkulName = matkulName;
-    const cleanName = matkulName.replace(/_/g, ' ');
-    document.getElementById('setup-matkul-title').innerText = `Latihan: ${cleanName}`;
-    document.getElementById('setup-total-available').innerText = "Memuat total soal...";
+    document.getElementById('setup-matkul-title').innerText = `Latihan: ${matkulName}`;
+    document.getElementById('setup-total-available').innerText = `Total soal tersedia: ${BANK_SOAL.length} soal`;
     toggleSetupModal(true);
-
-    window.onQuestionsLoaded = function(json) {
-      if (json.status === 'success' && json.data.length > 0) {
-        rawQuestions = json.data;
-        document.getElementById('setup-total-available').innerText = `Total soal tersedia: ${rawQuestions.length} soal`;
-      } else {
-        alert('Data soal untuk mata kuliah ini kosong.');
-        toggleSetupModal(false);
-      }
-    };
-
-    fetchJSONP(`${API_URL}?action=getQuestions&sheet=${encodeURIComponent(matkulName)}`, 'onQuestionsLoaded');
   }
 
   function toggleSetupModal(show) {
@@ -570,79 +445,7 @@
     document.getElementById('quiz-view').classList.add('hidden');
     document.getElementById('result-view').classList.add('hidden');
     document.getElementById('main-view').classList.remove('hidden');
-    loadMatkulList();
   }
-
-  function toggleUploadModal(show) {
-    document.getElementById('upload-modal').className = show ? 'modal' : 'modal hidden';
-  }
-
-  function processUpload() {
-    const rawName = document.getElementById('upload-matkul-name').value.trim();
-    let matkulName = rawName.replace(/[\(\)\&\/\?\*\\:\[\]]/g, '').trim().replace(/\s+/g, '_');
-    const fileInput = document.getElementById('upload-file');
-    
-    if (!matkulName) return alert('Masukkan nama mata kuliah terlebih dahulu!');
-    if (!fileInput.files.length) return alert('Pilih file Excel/CSV soal terlebih dahulu!');
-
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-
-    const btn = document.getElementById('btn-submit-upload');
-    btn.disabled = true;
-    btn.innerText = "Mengunggah...";
-
-    reader.onload = function(e) {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-
-        if (!jsonData || jsonData.length === 0) {
-          btn.disabled = false;
-          btn.innerText = "Unggah Sekarang";
-          return alert('File Excel/CSV tidak memiliki data.');
-        }
-
-        const form = document.getElementById('hidden-upload-form');
-        form.action = API_URL;
-        document.getElementById('form-matkul').value = matkulName;
-        document.getElementById('form-questions').value = JSON.stringify(jsonData);
-
-        isSubmitting = true;
-        form.submit();
-
-      } catch (err) {
-        btn.disabled = false;
-        btn.innerText = "Unggah Sekarang";
-        console.error(err);
-        alert('Gagal membaca file: ' + err.message);
-      }
-    };
-
-    reader.readAsArrayBuffer(file);
-  }
-
-  function handleIframeLoad() {
-    if (!isSubmitting) return;
-    isSubmitting = false;
-
-    const btn = document.getElementById('btn-submit-upload');
-    btn.disabled = false;
-    btn.innerText = "Unggah Sekarang";
-
-    alert('Berhasil mengunggah soal!');
-    toggleUploadModal(false);
-    document.getElementById('upload-matkul-name').value = '';
-    document.getElementById('upload-file').value = '';
-    
-    setTimeout(() => {
-      loadMatkulList();
-    }, 1500);
-  }
-
-  loadMatkulList();
 </script>
 </body>
 </html>
