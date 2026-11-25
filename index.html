@@ -349,6 +349,7 @@
 </div>
 
 <script>
+  // Link Web App Google Apps Script
   const API_URL = "https://script.google.com/macros/s/AKfycbL2S_n0KBuFIO-3KOP-bfibH4bSyOggf1xP--pJZRxqrLzYxtQKpz-W1kKUz1_5_fc/exec";
 
   let rawQuestions = [];
@@ -568,7 +569,7 @@
     document.getElementById('upload-modal').className = show ? 'modal' : 'modal hidden';
   }
 
-  // UPLOAD BATCHING (PER 25 SOAL) BIAR TIDAK DIBLOKIR GOOGLE
+  // FITUR UPLOAD BEBAS EROR CORS (text/plain mode)
   async function processUpload() {
     const rawName = document.getElementById('upload-matkul-name').value.trim();
     let matkulName = rawName.replace(/[\(\)\&\/\?\*\\:\[\]]/g, '').trim().replace(/\s+/g, '_');
@@ -609,14 +610,16 @@
             isFirstBatch: b === 0
           };
 
+          // Pengiriman menggunakan text/plain agar bebas dari blokir CORS Google Apps Script
           const res = await fetch(API_URL, {
             method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload)
           });
 
           const resJson = await res.json();
           if (resJson.status !== 'success') {
-            throw new Error(resJson.message || 'Gagal pada bagian batch ' + (b + 1));
+            throw new Error(resJson.message || 'Gagal pada batch ' + (b + 1));
           }
         }
 
