@@ -3,388 +3,281 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal UAS Interaktif</title>
+  <title>Latihan Soal UAS - Multi Matkul & Uploader</title>
+  <!-- Library XLSX untuk membaca file Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --correct: #16a34a;
-      --wrong: #dc2626;
+      --primary: #1f4e79;
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #333333;
+      --correct: #2e7d32;
+      --wrong: #c62828;
     }
-
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: var(--bg);
-      color: var(--text-main);
+      color: var(--text);
       margin: 0;
-      padding: 40px 20px;
+      padding: 20px;
     }
-
     .container {
       max-width: 800px;
       margin: 0 auto;
     }
-
     header {
+      background-color: var(--primary);
+      color: white;
+      padding: 25px 20px;
+      border-radius: 8px;
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 20px;
+      position: relative;
     }
-
-    .icon-toga {
-      font-size: 54px;
-      margin-bottom: 10px;
-      display: inline-block;
+    .admin-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid white;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: bold;
     }
-
-    h1.title {
-      font-size: 28px;
-      font-weight: 800;
-      color: var(--text-main);
-      margin: 0 0 8px 0;
-    }
-
-    p.subtitle {
-      font-size: 15px;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .admin-btn:hover { background: rgba(255, 255, 255, 0.35); }
+    .card {
+      background: var(--card);
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
       margin-bottom: 20px;
     }
-
-    .section-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
-    .card-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    .matkul-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 15px;
-    }
-
-    .matkul-card-item {
-      background: #f1f5f9;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-    }
-
-    .matkul-card-item:hover {
-      background: #e2e8f0;
-      border-color: var(--primary);
-      transform: translateY(-2px);
-    }
-
-    .matkul-name {
-      font-weight: 700;
+    .select-box {
+      width: 100%;
+      padding: 10px;
       font-size: 16px;
-      color: var(--text-main);
-      margin-bottom: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+      box-sizing: border-box;
     }
-
-    .matkul-sub {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
     .btn {
       background-color: var(--primary);
       color: white;
       border: none;
       padding: 10px 20px;
       font-size: 15px;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
-      font-weight: 600;
       margin-top: 15px;
     }
-
-    .btn-secondary {
-      background-color: #64748b;
-    }
-
+    .btn:hover { opacity: 0.9; }
     .option-btn {
       display: block;
       width: 100%;
       text-align: left;
-      padding: 14px 16px;
-      margin: 10px 0;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
       background: white;
       font-size: 15px;
       cursor: pointer;
       transition: all 0.2s;
-      box-sizing: border-box;
     }
-
-    .option-btn:hover {
-      background-color: #f8fafc;
-      border-color: #cbd5e1;
-    }
-
-    .option-btn.correct {
-      background-color: #dcfce7 !important;
-      border-color: var(--correct) !important;
-      color: var(--correct) !important;
-      font-weight: bold;
-    }
-
-    .option-btn.wrong {
-      background-color: #fee2e2 !important;
-      border-color: var(--wrong) !important;
-      color: var(--wrong) !important;
-    }
-
+    .option-btn:hover { background-color: #f0f4f8; }
+    .option-btn.correct { background-color: #e8f5e9; border-color: var(--correct); color: var(--correct); font-weight: bold; }
+    .option-btn.wrong { background-color: #ffebee; border-color: var(--wrong); color: var(--wrong); }
     .progress-bar {
       width: 100%;
-      background-color: #e2e8f0;
-      height: 8px;
-      border-radius: 4px;
+      background-color: #e0e0e0;
+      height: 10px;
+      border-radius: 5px;
       margin-bottom: 20px;
       overflow: hidden;
     }
-
     .progress-fill {
       height: 100%;
       background-color: var(--primary);
       width: 0%;
       transition: width 0.3s;
     }
-
     .hidden { display: none !important; }
-
+    
+    /* Perbaikan Modal Styling */
     .modal {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(0,0,0,0.6);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 9999;
     }
-
     .modal-content {
       background: white;
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 480px;
+      padding: 25px;
+      border-radius: 8px;
+      max-width: 500px;
       width: 90%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
-
-    .form-group { margin-bottom: 18px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
-    .form-group select, .form-group input {
-      width: 100%;
-      padding: 10px 12px;
-      box-sizing: border-box;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 14px;
-    }
-
-    .custom-count-input { margin-top: 10px; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+    .form-group input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
   </style>
 </head>
 <body>
 
 <div class="container">
   <header>
-    <div class="icon-toga">🎓</div>
-    <h1 class="title">Portal UAS Interaktif</h1>
-    <p class="subtitle">Latihan Soal & Bank Soal Multi-Mata Kuliah</p>
+    <button class="admin-btn" onclick="toggleModal(true)">+ Upload Soal Baru</button>
+    <h1 style="margin: 0 0 5px 0;">Portal UAS Interaktif</h1>
+    <p style="margin: 0; opacity: 0.9;">Latihan Soal & Bank Soal Multi-Mata Kuliah</p>
   </header>
 
-  <div id="main-view">
-    <div class="section-header">
-      <div class="section-title">Mata Kuliah Tersedia</div>
-    </div>
-
-    <div class="card-box">
-      <div class="matkul-grid">
-        <div class="matkul-card-item" onclick="openSetupModal('Teori Portofolio & Analisis Investasi')">
-          <div class="matkul-name">Teori Portofolio & Analisis Investasi</div>
-          <div class="matkul-sub">150 Soal Tersedia • Klik untuk Latihan</div>
-        </div>
-      </div>
-    </div>
+  <!-- Pilihan Mata Kuliah -->
+  <div id="matkul-card" class="card">
+    <label for="matkul-select" style="font-weight: bold;">Pilih Mata Kuliah:</label>
+    <select id="matkul-select" class="select-box" onchange="loadQuestions()">
+      <option value="">-- Memuat daftar matkul... --</option>
+    </select>
   </div>
 
-  <div id="quiz-view" class="card-box hidden">
-    <div style="margin-bottom: 15px;">
-      <button class="btn btn-secondary" style="margin-top:0; padding: 6px 12px; font-size: 13px;" onclick="backToMain()">← Kembali ke Daftar Matkul</button>
-    </div>
+  <div id="loading" class="card hidden" style="text-align:center;">
+    <h3>Memuat Soal dari Google Sheets...</h3>
+  </div>
 
+  <!-- Quiz Container -->
+  <div id="quiz-container" class="card hidden">
     <div class="progress-bar">
       <div id="progress" class="progress-fill"></div>
     </div>
-
-    <div style="display:flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px;">
-      <span id="question-number" style="font-weight:bold; color: var(--text-muted);">Soal 1/10</span>
-      <span id="score-counter" style="font-weight:bold; color: var(--primary);">Skor: 0</span>
+    <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+      <span id="question-number" style="font-weight:bold;">Soal 1/135</span>
+      <span id="score-counter">Skor: 0</span>
     </div>
-
-    <h3 id="question-text" style="margin-top: 0; line-height: 1.5; font-size: 18px;">Teks soal...</h3>
+    <h3 id="question-text">Teks soal akan muncul di sini...</h3>
     <div id="options-container"></div>
-    <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Soal Berikutnya →</button>
+    <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Soal Berikutnya</button>
   </div>
 
-  <div id="result-view" class="card-box hidden" style="text-align: center; padding: 40px 20px;">
-    <div style="font-size: 50px; margin-bottom: 10px;">🏆</div>
-    <h2 style="margin: 0 0 10px 0;">Latihan Selesai!</h2>
-    <p style="font-size: 18px; color: var(--text-muted); margin-bottom: 25px;">
-      Skor Akhir Anda: <strong id="final-score" style="color: var(--primary); font-size: 24px;">0</strong> / <span id="total-q">0</span>
-    </p>
-    <button class="btn" onclick="restartQuiz()">Ulangi Latihan Matkul Ini</button>
-    <button class="btn btn-secondary" onclick="backToMain()">Pilih Matkul Lain</button>
+  <!-- Hasil Quiz -->
+  <div id="result-container" class="card hidden" style="text-align: center;">
+    <h2>Selesai!</h2>
+    <p style="font-size: 20px;">Skor Akhir Anda: <strong id="final-score">0</strong> / <span id="total-q">0</span></p>
+    <button class="btn" onclick="restartQuiz()">Ulangi Latihan</button>
   </div>
 </div>
 
-<div id="setup-modal" class="modal hidden">
+<!-- Modal Upload Soal Baru (Ditutup secara default) -->
+<div id="upload-modal" class="modal hidden">
   <div class="modal-content">
-    <h3 style="margin-top:0;" id="setup-matkul-title">Pengaturan Latihan</h3>
-    <p style="font-size: 14px; color: var(--text-muted);" id="setup-total-available">Total soal tersedia: 150 soal</p>
+    <h3 style="margin-top: 0;">Upload Soal Baru ke Google Sheets</h3>
+    <p style="font-size: 13px; color: #666;">Format header file Excel/CSV: <b>id, soal, opsi_a, opsi_b, opsi_c, opsi_d, jawaban</b></p>
     
     <div class="form-group">
-      <label>Pilih Berapa Soal Yang Ingin Dijawab:</label>
-      <select id="select-question-count" onchange="handleCountSelectChange()">
-        <option value="10">10 Soal (Acak)</option>
-        <option value="20">20 Soal (Acak)</option>
-        <option value="50">50 Soal (Acak)</option>
-        <option value="all">Semua Soal (Acak)</option>
-        <option value="custom">Custom (Isi Sendiri)</option>
-      </select>
-      <input type="number" id="custom-question-count" class="custom-count-input hidden" placeholder="Masukkan jumlah soal (misal: 15)" min="1">
+      <label>Nama Mata Kuliah (Nama Sheet Baru):</label>
+      <input type="text" id="upload-matkul-name" placeholder="Misal: Manajemen_Keuangan">
+    </div>
+    
+    <div class="form-group">
+      <label>Pilih File (.xlsx / .csv):</label>
+      <input type="file" id="upload-file" accept=".xlsx, .xls, .csv">
     </div>
 
-    <div style="text-align: right; margin-top: 25px;">
-      <button class="btn btn-secondary" style="margin-right: 8px; margin-top:0;" onclick="toggleSetupModal(false)">Batal</button>
-      <button class="btn" style="margin-top:0;" onclick="startQuizWithSettings()">Mulai Kerjakan Soal</button>
+    <div style="text-align: right; margin-top: 20px;">
+      <button class="btn" style="background:#888; color:white; margin-right: 8px;" onclick="toggleModal(false)">Batal</button>
+      <button class="btn" id="btn-submit-upload" onclick="processUpload()">Unggah Sekarang</button>
     </div>
   </div>
 </div>
 
 <script>
-  // BANK SOAL DITANAM LANGSUNG DI DALAM KODE WEB (LOKAL & BEBAS EROR SERVER)
-  const BANK_SOAL = [
-    {"id":1,"soal":"Kinerja reksadana yang dihitung dengan pengukur ini dilakukan dengan membagi return lebih (excess return) dengan volatilitas (volatility) reksadana. Pengukur kinerja reksadana ini disebut dengan pengukur...","opsi_a":"reward to diversification","opsi_b":"Treynor (Treynor's measure)","opsi_c":"Sharpe (Sharpe's measure)","opsi_d":"reward to variability","jawaban":"B"},
-    {"id":2,"soal":"Wadah yang dipergunakan untuk menghimpun dana dari masyarakat pemodal untuk selanjutnya diinvestasikan dalam portofolio efek oleh Manajer Investasi disebut","opsi_a":"Reksadana","opsi_b":"Obligasi","opsi_c":"Bursa efek","opsi_d":"Saham","jawaban":"A"},
-    {"id":3,"soal":"Jika transaksi perdagangan sudah terjadi, maka akan diteruskan ke proses yang kedua yaitu proses penyelesaian yang dilakukan oleh","opsi_a":"sistem penjaminan dan penyelesaian transaksi (clearing and settlement system)","opsi_b":"sistem proses penyelesaian (settlement process)","opsi_c":"PT. Kustodian Sentral Eek Indonesia (KSEI)","opsi_d":"PT. IDX trading system","jawaban":"A"},
-    {"id":4,"soal":"Tanggal ditetapkan Sistem Otomasi perdagangan di BEJ dilaksanakan dengan sistem computer JATS (Jakarta Automated Trading Systems)","opsi_a":"02 Maret 2009","opsi_b":"10 Nopember 1995","opsi_c":"22 mei 1995","opsi_d":"2 Juni 1988","jawaban":"C"},
-    {"id":5,"soal":"Koefisien variasi (coefficient of variation) saham WSKT dapat dihitung sebagai berikut. Return ekspektasian yang sudah dihitung adalah E(R)=0,025 dan risiko sebesar yang sudah dihitung adalah SD=0,2586. Dengan demikian koefisien variasi saham WSKT adalah?","opsi_a":"12,2048","opsi_b":"11,1728","opsi_c":"10,0509","opsi_d":"10,344","jawaban":"D"}
-    // 150 Soal Lengkap Sudah Siap
-  ];
+  const API_URL = "https://script.google.com/macros/s/AKfycbz2aKwmjfjMFjCJU_o3NHHRQjY-ozJjJGGCaJf7WxA_WLlCHtituMWm2BhSbwWctrjJdw/exec";
 
-  let rawQuestions = BANK_SOAL;
-  let activeQuestions = [];
+  let questions = [];
   let currentIndex = 0;
   let score = 0;
   let selected = false;
 
-  function openSetupModal(matkulName) {
-    document.getElementById('setup-matkul-title').innerText = `Latihan: ${matkulName}`;
-    document.getElementById('setup-total-available').innerText = `Total soal tersedia: ${BANK_SOAL.length} soal`;
-    toggleSetupModal(true);
-  }
-
-  function toggleSetupModal(show) {
-    document.getElementById('setup-modal').className = show ? 'modal' : 'modal hidden';
-  }
-
-  function handleCountSelectChange() {
-    const select = document.getElementById('select-question-count');
-    const customInput = document.getElementById('custom-question-count');
-    if (select.value === 'custom') {
-      customInput.classList.remove('hidden');
-    } else {
-      customInput.classList.add('hidden');
+  async function loadMatkulList() {
+    try {
+      const res = await fetch(`${API_URL}?action=getSheets`);
+      const json = await res.json();
+      if (json.status === 'success') {
+        const select = document.getElementById('matkul-select');
+        select.innerHTML = '';
+        json.sheets.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.innerText = name.replace(/_/g, ' ');
+          select.appendChild(opt);
+        });
+        if (json.sheets.length > 0) loadQuestions();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Gagal memuat daftar mata kuliah.');
     }
   }
 
-  function shuffleArray(array) {
-    const arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+  async function loadQuestions() {
+    const selectedMatkul = document.getElementById('matkul-select').value;
+    if (!selectedMatkul) return;
+
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('quiz-container').classList.add('hidden');
+    document.getElementById('result-container').classList.add('hidden');
+
+    try {
+      const res = await fetch(`${API_URL}?action=getQuestions&sheet=${encodeURIComponent(selectedMatkul)}`);
+      const json = await res.json();
+      document.getElementById('loading').classList.add('hidden');
+
+      if (json.status === 'success' && json.data.length > 0) {
+        questions = json.data;
+        currentIndex = 0;
+        score = 0;
+        document.getElementById('score-counter').innerText = 'Skor: 0';
+        document.getElementById('quiz-container').classList.remove('hidden');
+        showQuestion();
+      } else {
+        alert('Sheet ini belum memiliki soal atau data kosong.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Gagal mengambil soal dari server.');
     }
-    return arr;
-  }
-
-  function startQuizWithSettings() {
-    const countSelect = document.getElementById('select-question-count').value;
-    let targetCount = rawQuestions.length;
-
-    if (countSelect === 'all') {
-      targetCount = rawQuestions.length;
-    } else if (countSelect === 'custom') {
-      const val = parseInt(document.getElementById('custom-question-count').value);
-      if (!val || val <= 0) return alert('Masukkan jumlah soal custom yang valid!');
-      targetCount = Math.min(val, rawQuestions.length);
-    } else {
-      targetCount = Math.min(parseInt(countSelect), rawQuestions.length);
-    }
-
-    const shuffledAll = shuffleArray(rawQuestions);
-    activeQuestions = shuffledAll.slice(0, targetCount);
-
-    toggleSetupModal(false);
-    document.getElementById('main-view').classList.add('hidden');
-    document.getElementById('result-view').classList.add('hidden');
-    document.getElementById('quiz-view').classList.remove('hidden');
-
-    currentIndex = 0;
-    score = 0;
-    document.getElementById('score-counter').innerText = 'Skor: 0';
-    showQuestion();
   }
 
   function showQuestion() {
     selected = false;
     document.getElementById('next-btn').classList.add('hidden');
-    const q = activeQuestions[currentIndex];
+    const q = questions[currentIndex];
     
-    document.getElementById('question-number').innerText = `Soal ${currentIndex + 1} dari ${activeQuestions.length}`;
-    document.getElementById('progress').style.width = `${((currentIndex + 1) / activeQuestions.length) * 100}%`;
-    document.getElementById('question-text').innerText = `${q.soal}`;
+    document.getElementById('question-number').innerText = `Soal ${currentIndex + 1} dari ${questions.length}`;
+    document.getElementById('progress').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+    document.getElementById('question-text').innerText = `${q.id}. ${q.soal}`;
 
     const optsContainer = document.getElementById('options-container');
     optsContainer.innerHTML = '';
 
-    const options = shuffleArray([
+    const options = [
       { key: 'A', text: q.opsi_a },
       { key: 'B', text: q.opsi_b },
       { key: 'C', text: q.opsi_c },
       { key: 'D', text: q.opsi_d }
-    ]);
+    ];
 
     options.forEach(opt => {
-      if (!opt.text) return;
       const btn = document.createElement('button');
       btn.className = 'option-btn';
-      btn.innerText = `${opt.text}`;
+      btn.innerText = `${opt.key}. ${opt.text}`;
       btn.onclick = () => checkAnswer(opt.key, q.jawaban, btn);
       optsContainer.appendChild(btn);
     });
@@ -398,7 +291,7 @@
     const allButtons = document.querySelectorAll('.option-btn');
     
     allButtons.forEach(btn => {
-      if (btn.innerText.includes(getOptionTextByKey(activeQuestions[currentIndex], cleanCorrect))) {
+      if (btn.innerText.startsWith(cleanCorrect + '.')) {
         btn.classList.add('correct');
       }
     });
@@ -413,17 +306,9 @@
     document.getElementById('next-btn').classList.remove('hidden');
   }
 
-  function getOptionTextByKey(q, key) {
-    if (key === 'A') return q.opsi_a;
-    if (key === 'B') return q.opsi_b;
-    if (key === 'C') return q.opsi_c;
-    if (key === 'D') return q.opsi_d;
-    return '';
-  }
-
   function nextQuestion() {
     currentIndex++;
-    if (currentIndex < activeQuestions.length) {
+    if (currentIndex < questions.length) {
       showQuestion();
     } else {
       showResult();
@@ -431,21 +316,82 @@
   }
 
   function showResult() {
-    document.getElementById('quiz-view').classList.add('hidden');
-    document.getElementById('result-view').classList.remove('hidden');
+    document.getElementById('quiz-container').classList.add('hidden');
+    document.getElementById('result-container').classList.remove('hidden');
     document.getElementById('final-score').innerText = score;
-    document.getElementById('total-q').innerText = activeQuestions.length;
+    document.getElementById('total-q').innerText = questions.length;
   }
 
   function restartQuiz() {
-    startQuizWithSettings();
+    currentIndex = 0;
+    score = 0;
+    document.getElementById('score-counter').innerText = `Skor: 0`;
+    document.getElementById('result-container').classList.add('hidden');
+    document.getElementById('quiz-container').classList.remove('hidden');
+    showQuestion();
   }
 
-  function backToMain() {
-    document.getElementById('quiz-view').classList.add('hidden');
-    document.getElementById('result-view').classList.add('hidden');
-    document.getElementById('main-view').classList.remove('hidden');
+  function toggleModal(show) {
+    const modal = document.getElementById('upload-modal');
+    if (show) {
+      modal.classList.remove('hidden');
+    } else {
+      modal.classList.add('hidden');
+    }
   }
+
+  function processUpload() {
+    const matkulName = document.getElementById('upload-matkul-name').value.trim().replace(/\s+/g, '_');
+    const fileInput = document.getElementById('upload-file');
+    
+    if (!matkulName) return alert('Masukkan nama mata kuliah terlebih dahulu!');
+    if (!fileInput.files.length) return alert('Pilih file Excel/CSV soal terlebih dahulu!');
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    const btn = document.getElementById('btn-submit-upload');
+    btn.disabled = true;
+    btn.innerText = "Mengunggah...";
+
+    reader.onload = async function(e) {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            matkul: matkulName,
+            questions: jsonData
+          })
+        });
+        const json = await res.json();
+        btn.disabled = false;
+        btn.innerText = "Unggah Sekarang";
+
+        if (json.status === 'success') {
+          alert(json.message);
+          toggleModal(false);
+          loadMatkulList();
+        } else {
+          alert('Gagal upload: ' + json.message);
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = "Unggah Sekarang";
+        console.error(err);
+        alert('Terjadi kesalahan saat mengunggah.');
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  }
+
+  // Load awal
+  loadMatkulList();
 </script>
 </body>
 </html>
