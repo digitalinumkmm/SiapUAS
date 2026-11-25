@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Latihan Soal UAS - Multi Matkul & Uploader</title>
+  <!-- Library XLSX untuk membaca file Excel (.xlsx / .csv) langsung di browser -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #1f4e79;
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #333333;
+      --correct: #2e7d32;
+      --wrong: #c62828;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .admin-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .admin-btn:hover { background: rgba(255, 255, 255, 0.3); }
+    .card {
+      background: var(--card);
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .select-box {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+    }
+    .btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    .btn:hover { opacity: 0.9; }
+    .option-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .option-btn:hover { background-color: #f0f4f8; }
+    .option-btn.correct { background-color: #e8f5e9; border-color: var(--correct); color: var(--correct); font-weight: bold; }
+    .option-btn.wrong { background-color: #ffebee; border-color: var(--wrong); color: var(--wrong); }
+    .progress-bar {
+      width: 100%;
+      background-color: #e0e0e0;
+      height: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background-color: var(--primary);
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .hidden { display: none; }
+    /* Modal Styling */
+    .modal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+    }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+    .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <button class="admin-btn" onclick="toggleModal(true)">+ Upload Soal Baru</button>
+    <h1>Portal UAS Interaktif</h1>
+    <p>Latihan Soal & Bank Soal Multi-Mata Kuliah</p>
+  </header>
+
+  <!-- Pilihan Mata Kuliah -->
+  <div id="matkul-card" class="card">
+    <label for="matkul-select" style="font-weight: bold;">Pilih Mata Kuliah:</label>
+    <select id="matkul-select" class="select-box" onchange="loadQuestions()">
+      <option value="">-- Memuat daftar matkul... --</option>
+    </select>
+  </div>
+
+  <div id="loading" class="card hidden" style="text-align:center;">
+    <h3>Memuat Soal dari Google Sheets...</h3>
+  </div>
+
+  <!-- Quiz Container -->
+  <div id="quiz-container" class="card hidden">
+    <div class="progress-bar">
+      <div id="progress" class="progress-fill"></div>
+    </div>
+    <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+      <span id="question-number" style="font-weight:bold;">Soal 1/135</span>
+      <span id="score-counter">Skor: 0</span>
+    </div>
+    <h3 id="question-text">Teks soal akan muncul di sini...</h3>
+    <div id="options-container"></div>
+    <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Soal Berikutnya</button>
+  </div>
+
+  <!-- Hasil Quiz -->
+  <div id="result-container" class="card hidden" style="text-align: center;">
+    <h2>Selesai!</h2>
+    <p style="font-size: 20px;">Skor Akhir Anda: <strong id="final-score">0</strong> / <span id="total-q">0</span></p>
+    <button class="btn" onclick="restartQuiz()">Ulangi Latihan</button>
+  </div>
+</div>
+
+<!-- Modal Upload Soal Baru (Admin Panel) -->
+<div id="upload-modal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Upload Soal Baru ke Google Sheets</h3>
+    <p style="font-size: 13px; color: #666;">Format header file Excel/CSV: <b>id, soal, opsi_a, opsi_b, opsi_c, opsi_
