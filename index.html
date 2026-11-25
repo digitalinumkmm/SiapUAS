@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal UAS Interaktif</title>
-  <!-- Library XLSX untuk membaca file Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -32,7 +31,6 @@
       margin: 0 auto;
     }
 
-    /* Header Styling */
     header {
       text-align: center;
       margin-bottom: 40px;
@@ -57,7 +55,6 @@
       margin: 0;
     }
 
-    /* Action & Card Header */
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -87,7 +84,6 @@
       background-color: var(--primary-hover);
     }
 
-    /* Main Box Card */
     .card-box {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -111,7 +107,6 @@
       font-size: 14px;
     }
 
-    /* Matkul Grid */
     .matkul-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -146,7 +141,6 @@
       color: var(--text-muted);
     }
 
-    /* Quiz & Option Styling */
     .btn {
       background-color: var(--primary);
       color: white;
@@ -214,7 +208,6 @@
 
     .hidden { display: none !important; }
 
-    /* Modal Styling */
     .modal {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -253,14 +246,12 @@
 <body>
 
 <div class="container">
-  <!-- Header Toga -->
   <header>
     <div class="icon-toga">🎓</div>
     <h1 class="title">Portal UAS Interaktif</h1>
     <p class="subtitle">Latihan Soal & Bank Soal Multi-Mata Kuliah</p>
   </header>
 
-  <!-- Halaman Utama: Daftar Matkul -->
   <div id="main-view">
     <div class="section-header">
       <div class="section-title" id="matkul-count-title">Mata Kuliah (0)</div>
@@ -268,23 +259,19 @@
     </div>
 
     <div class="card-box" id="matkul-card-box">
-      <!-- Loading State -->
       <div id="loading-state" class="empty-state">
         <div class="empty-text">Memeriksa sinkronisasi data...</div>
       </div>
 
-      <!-- Empty State -->
       <div id="empty-state" class="empty-state hidden">
         <div class="empty-icon">📚</div>
         <div class="empty-text">Belum ada bank soal tersimpan. Silakan tambah bank soal terlebih dahulu.</div>
       </div>
 
-      <!-- Grid Matkul -->
       <div id="matkul-grid" class="matkul-grid hidden"></div>
     </div>
   </div>
 
-  <!-- Halaman Quiz / Latihan -->
   <div id="quiz-view" class="card-box hidden">
     <div style="margin-bottom: 15px;">
       <button class="btn btn-secondary" style="margin-top:0; padding: 6px 12px; font-size: 13px;" onclick="backToMain()">← Kembali ke Daftar Matkul</button>
@@ -304,7 +291,6 @@
     <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Soal Berikutnya →</button>
   </div>
 
-  <!-- Halaman Hasil / Skor Akhir -->
   <div id="result-view" class="card-box hidden" style="text-align: center; padding: 40px 20px;">
     <div style="font-size: 50px; margin-bottom: 10px;">🏆</div>
     <h2 style="margin: 0 0 10px 0;">Latihan Selesai!</h2>
@@ -316,7 +302,6 @@
   </div>
 </div>
 
-<!-- Modal Setting Jumlah Soal -->
 <div id="setup-modal" class="modal hidden">
   <div class="modal-content">
     <h3 style="margin-top:0;" id="setup-matkul-title">Pengaturan Latihan</h3>
@@ -341,7 +326,6 @@
   </div>
 </div>
 
-<!-- Modal Upload Bank Soal Baru -->
 <div id="upload-modal" class="modal hidden">
   <div class="modal-content">
     <h3 style="margin-top: 0;">Tambah Bank Soal Baru</h3>
@@ -584,12 +568,10 @@
     document.getElementById('upload-modal').className = show ? 'modal' : 'modal hidden';
   }
 
-  function processUpload() {
+  // UPLOAD BATCHING (PER 25 SOAL) BIAR TIDAK DIBLOKIR GOOGLE
+  async function processUpload() {
     const rawName = document.getElementById('upload-matkul-name').value.trim();
-    
-    // Pembersihan nama sheet dari karakter terlarang Google Sheets: ( ) & / \ ? * : [ ]
     let matkulName = rawName.replace(/[\(\)\&\/\?\*\\:\[\]]/g, '').trim().replace(/\s+/g, '_');
-    
     const fileInput = document.getElementById('upload-file');
     
     if (!matkulName) return alert('Masukkan nama mata kuliah terlebih dahulu!');
@@ -600,7 +582,6 @@
 
     const btn = document.getElementById('btn-submit-upload');
     btn.disabled = true;
-    btn.innerText = "Mengunggah...";
 
     reader.onload = async function(e) {
       try {
@@ -615,34 +596,43 @@
           return alert('File Excel/CSV tidak memiliki data.');
         }
 
-        // Pengiriman data menggunakan FormData / URLSearchParams untuk menghindari restriksi CORS
-        const formData = new URLSearchParams();
-        formData.append('matkul', matkulName);
-        formData.append('questions', JSON.stringify(jsonData));
+        const batchSize = 25;
+        const totalBatches = Math.ceil(jsonData.length / batchSize);
 
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: formData
-        });
+        for (let b = 0; b < totalBatches; b++) {
+          const chunk = jsonData.slice(b * batchSize, (b + 1) * batchSize);
+          btn.innerText = `Mengunggah... (${b + 1}/${totalBatches})`;
 
-        const json = await res.json();
+          const payload = {
+            matkul: matkulName,
+            questions: chunk,
+            isFirstBatch: b === 0
+          };
+
+          const res = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+
+          const resJson = await res.json();
+          if (resJson.status !== 'success') {
+            throw new Error(resJson.message || 'Gagal pada bagian batch ' + (b + 1));
+          }
+        }
+
         btn.disabled = false;
         btn.innerText = "Unggah Sekarang";
+        alert(`Berhasil mengunggah total ${jsonData.length} soal ke ${matkulName.replace(/_/g, ' ')}!`);
+        toggleUploadModal(false);
+        document.getElementById('upload-matkul-name').value = '';
+        fileInput.value = '';
+        loadMatkulList();
 
-        if (json.status === 'success') {
-          alert(json.message);
-          toggleUploadModal(false);
-          document.getElementById('upload-matkul-name').value = '';
-          fileInput.value = '';
-          loadMatkulList();
-        } else {
-          alert('Gagal upload: ' + json.message);
-        }
       } catch (err) {
         btn.disabled = false;
         btn.innerText = "Unggah Sekarang";
         console.error(err);
-        alert('Terjadi kesalahan saat mengunggah. Pastikan Apps Script telah di-deploy ulang.');
+        alert('Gagal upload: ' + err.message);
       }
     };
 
