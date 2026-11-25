@@ -1,397 +1,246 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Latihan Soal UAS - Multi Matkul & Uploader</title>
-  <!-- Library XLSX untuk membaca file Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <style>
-    :root {
-      --primary: #1f4e79;
-      --bg: #f4f6f9;
-      --card: #ffffff;
-      --text: #333333;
-      --correct: #2e7d32;
-      --wrong: #c62828;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-    header {
-      background-color: var(--primary);
-      color: white;
-      padding: 25px 20px;
-      border-radius: 8px;
-      text-align: center;
-      margin-bottom: 20px;
-      position: relative;
-    }
-    .admin-btn {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      border: 1px solid white;
-      padding: 6px 14px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: bold;
-    }
-    .admin-btn:hover { background: rgba(255, 255, 255, 0.35); }
-    .card {
-      background: var(--card);
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
-    }
-    .select-box {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      margin-top: 10px;
-      box-sizing: border-box;
-    }
-    .btn {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      font-size: 15px;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 15px;
-    }
-    .btn:hover { opacity: 0.9; }
-    .option-btn {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 12px;
-      margin: 8px 0;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      background: white;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .option-btn:hover { background-color: #f0f4f8; }
-    .option-btn.correct { background-color: #e8f5e9; border-color: var(--correct); color: var(--correct); font-weight: bold; }
-    .option-btn.wrong { background-color: #ffebee; border-color: var(--wrong); color: var(--wrong); }
-    .progress-bar {
-      width: 100%;
-      background-color: #e0e0e0;
-      height: 10px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      background-color: var(--primary);
-      width: 0%;
-      transition: width 0.3s;
-    }
-    .hidden { display: none !important; }
-    
-    /* Perbaikan Modal Styling */
-    .modal {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-    .modal-content {
-      background: white;
-      padding: 25px;
-      border-radius: 8px;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
-    .form-group input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal UAS Interaktif</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--tx:#222;--mut:#6b7280;--bd:#e5e7eb;--pri:#1f4e79;--prit:#fff;--ok:#2e7d32;--okb:#e8f5e9;--no:#c62828;--nob:#ffebee;--wa:#b26a00;--wab:#fff4e0}
+@media (prefers-color-scheme:dark){:root{--bg:#14181d;--card:#1e242b;--tx:#eceff1;--mut:#9aa5b1;--bd:#2f3740;--pri:#6fa8dc;--prit:#10202e;--ok:#7bd88f;--okb:#163122;--no:#ff8a80;--nob:#3a1b1b;--wa:#ffb74d;--wab:#3a2c14}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 'Segoe UI',system-ui,-apple-system,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:18px 14px 50px}
+header{background:var(--pri);color:var(--prit);border-radius:14px;padding:22px 20px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:22px}header p{margin:2px 0 0;opacity:.85;font-size:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.center{text-align:center}.mut{color:var(--mut);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.grid .card{margin:0;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sb{justify-content:space-between}
+h3{margin:0;font-size:17px}
+.pct{font-size:24px;font-weight:700;color:var(--pri)}
+.bar{height:8px;background:var(--bd);border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--pri);transition:width .3s}
+.chip{font-size:12px;padding:2px 10px;border-radius:20px;font-weight:600;align-self:flex-start}
+.chip.ok{background:var(--okb);color:var(--ok)}.chip.no{background:var(--nob);color:var(--no)}.chip.wa{background:var(--wab);color:var(--wa)}.chip.gr{background:var(--bd);color:var(--mut)}
+button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:9px 14px}
+button.pri{background:var(--pri);color:var(--prit);border-color:var(--pri);font-weight:600}
+button.danger{background:var(--no);color:#fff;border-color:var(--no);font-weight:600}
+button.sm{padding:5px 10px;font-size:13px}button:disabled{opacity:.5;cursor:default}
+header button{background:rgba(255,255,255,.18);color:var(--prit);border-color:rgba(255,255,255,.5)}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;padding:13px 14px;font-size:15px}
+.opt:hover:not(:disabled){background:var(--bg)}
+.opt.ok{background:var(--okb);border-color:var(--ok);color:var(--ok);font-weight:600}
+.opt.no{background:var(--nob);border-color:var(--no);color:var(--no)}
+input[type=number],input[type=text],select{font:inherit;width:100%;padding:10px;border-radius:9px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
+label.ck{display:flex;gap:8px;align-items:center;margin:10px 0}
+.big{font-size:46px;font-weight:700;color:var(--pri);line-height:1.1}
+.wi{border-top:1px solid var(--bd);padding:10px 0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:99;padding:14px}
+.mbox{background:var(--card);border-radius:14px;padding:22px;max-width:480px;width:100%;max-height:90vh;overflow:auto}
+.hidden{display:none!important}
+code{background:var(--bg);padding:1px 5px;border-radius:5px;font-size:13px}
+</style>
 </head>
 <body>
-
-<div class="container">
+<div class="wrap">
   <header>
-    <button class="admin-btn" onclick="toggleModal(true)">+ Upload Soal Baru</button>
-    <h1 style="margin: 0 0 5px 0;">Portal UAS Interaktif</h1>
-    <p style="margin: 0; opacity: 0.9;">Latihan Soal & Bank Soal Multi-Mata Kuliah</p>
+    <div><h1>Portal UAS Interaktif</h1><p>Latihan soal & pantau penguasaan per mata kuliah</p></div>
+    <button onclick="openUpload()">+ Upload Soal Baru</button>
   </header>
-
-  <!-- Pilihan Mata Kuliah -->
-  <div id="matkul-card" class="card">
-    <label for="matkul-select" style="font-weight: bold;">Pilih Mata Kuliah:</label>
-    <select id="matkul-select" class="select-box" onchange="loadQuestions()">
-      <option value="">-- Memuat daftar matkul... --</option>
-    </select>
-  </div>
-
-  <div id="loading" class="card hidden" style="text-align:center;">
-    <h3>Memuat Soal dari Google Sheets...</h3>
-  </div>
-
-  <!-- Quiz Container -->
-  <div id="quiz-container" class="card hidden">
-    <div class="progress-bar">
-      <div id="progress" class="progress-fill"></div>
-    </div>
-    <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
-      <span id="question-number" style="font-weight:bold;">Soal 1/135</span>
-      <span id="score-counter">Skor: 0</span>
-    </div>
-    <h3 id="question-text">Teks soal akan muncul di sini...</h3>
-    <div id="options-container"></div>
-    <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Soal Berikutnya</button>
-  </div>
-
-  <!-- Hasil Quiz -->
-  <div id="result-container" class="card hidden" style="text-align: center;">
-    <h2>Selesai!</h2>
-    <p style="font-size: 20px;">Skor Akhir Anda: <strong id="final-score">0</strong> / <span id="total-q">0</span></p>
-    <button class="btn" onclick="restartQuiz()">Ulangi Latihan</button>
-  </div>
+  <main id="app"></main>
 </div>
-
-<!-- Modal Upload Soal Baru (Ditutup secara default) -->
-<div id="upload-modal" class="modal hidden">
-  <div class="modal-content">
-    <h3 style="margin-top: 0;">Upload Soal Baru ke Google Sheets</h3>
-    <p style="font-size: 13px; color: #666;">Format header file Excel/CSV: <b>id, soal, opsi_a, opsi_b, opsi_c, opsi_d, jawaban</b></p>
-    
-    <div class="form-group">
-      <label>Nama Mata Kuliah (Nama Sheet Baru):</label>
-      <input type="text" id="upload-matkul-name" placeholder="Misal: Manajemen_Keuangan">
-    </div>
-    
-    <div class="form-group">
-      <label>Pilih File (.xlsx / .csv):</label>
-      <input type="file" id="upload-file" accept=".xlsx, .xls, .csv">
-    </div>
-
-    <div style="text-align: right; margin-top: 20px;">
-      <button class="btn" style="background:#888; color:white; margin-right: 8px;" onclick="toggleModal(false)">Batal</button>
-      <button class="btn" id="btn-submit-upload" onclick="processUpload()">Unggah Sekarang</button>
-    </div>
-  </div>
-</div>
+<div id="modal" class="modal hidden"><div class="mbox" id="mbox"></div></div>
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbz2aKwmjfjMFjCJU_o3NHHRQjY-ozJjJGGCaJf7WxA_WLlCHtituMWm2BhSbwWctrjJdw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz2aKwmjfjMFjCJU_o3NHHRQjY-ozJjJGGCaJf7WxA_WLlCHtituMWm2BhSbwWctrjJdw/exec";
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const nice = n => String(n).replace(/_/g, ' ');
 
-  let questions = [];
-  let currentIndex = 0;
-  let score = 0;
-  let selected = false;
+let sheets = [], cache = {}, V = { v: 'home' }, Q = null, prog = {}, hidden = [];
+try { prog = JSON.parse(localStorage.getItem('uas_progress_v1') || '{}'); hidden = JSON.parse(localStorage.getItem('uas_hidden_v1') || '[]'); } catch (e) {}
+const saveP = () => { try { localStorage.setItem('uas_progress_v1', JSON.stringify(prog)); } catch (e) {} };
+const saveH = () => { try { localStorage.setItem('uas_hidden_v1', JSON.stringify(hidden)); } catch (e) {} };
+const qkey = q => q.id + ':' + String(q.soal).slice(0, 40);
+async function api(p) { const r = await fetch(API_URL + '?' + p); return r.json(); }
 
-  async function loadMatkulList() {
+/* ---------- data ---------- */
+async function loadSheets() {
+  $('#app').innerHTML = '<div class="card center">Memuat daftar mata kuliah...</div>';
+  try {
+    const j = await api('action=getSheets');
+    if (j.status !== 'success') throw new Error();
+    sheets = j.sheets.filter(n => !hidden.includes(n));
+    render();
+    sheets.forEach(n => loadQ(n));
+  } catch (e) {
+    $('#app').innerHTML = '<div class="card center">Gagal memuat daftar mata kuliah.<br><br><button class="pri" onclick="loadSheets()">Coba lagi</button></div>';
+  }
+}
+async function loadQ(n, force) {
+  if (cache[n] && !force) return;
+  try { const j = await api('action=getQuestions&sheet=' + encodeURIComponent(n)); if (j.status === 'success') cache[n] = j.data || []; } catch (e) {}
+  if (V.v === 'home') render();
+}
+function stat(n) {
+  const qs = cache[n]; if (!qs) return null;
+  const P = prog[n] || {}; let m = 0, t = 0, a = 0, c = 0;
+  qs.forEach(q => { const x = P[qkey(q)]; if (x && x.n) { t++; a += x.n; c += x.c; if (x.l === 1) m++; } });
+  return { total: qs.length, m, t, pct: qs.length ? Math.round(m / qs.length * 100) : 0, acc: a ? Math.round(c / a * 100) : 0 };
+}
+function level(p, t) {
+  if (!t) return ['Belum dicoba', 'gr'];
+  if (p >= 85) return ['Siap UAS', 'ok'];
+  if (p >= 70) return ['Penguasaan baik', 'ok'];
+  if (p >= 40) return ['Cukup, terus latihan', 'wa'];
+  return ['Perlu banyak latihan', 'no'];
+}
+
+/* ---------- views ---------- */
+function render() { $('#app').innerHTML = ({ home, setup, quiz, result })[V.v](); }
+
+function home() {
+  let T = 0, M = 0, loaded = 0;
+  sheets.forEach(n => { const s = stat(n); if (s) { T += s.total; M += s.m; loaded++; } });
+  const op = T ? Math.round(M / T * 100) : 0;
+  let h = '';
+  if (sheets.length) h += `<div class="card"><div class="row sb"><b>Kesiapan keseluruhan</b><span class="pct">${op}%</span></div><div class="bar"><i style="width:${op}%"></i></div><div class="mut" style="margin-top:6px">${sheets.length} mata kuliah · ${T} soal. Soal dihitung dikuasai jika jawaban terakhirmu benar.</div></div>`;
+  else h += '<div class="card center">Belum ada mata kuliah. Klik "+ Upload Soal Baru".</div>';
+  h += '<div class="grid">' + sheets.map((n, i) => {
+    const s = stat(n);
+    if (!s) return `<div class="card"><h3>${esc(nice(n))}</h3><div class="mut">Memuat soal...</div><button class="sm danger" onclick="askDel(${i})">Hapus</button></div>`;
+    const lv = level(s.pct, s.t);
+    return `<div class="card"><div class="row sb"><h3>${esc(nice(n))}</h3><span class="pct">${s.pct}%</span></div>
+      <div class="bar"><i style="width:${s.pct}%"></i></div>
+      <span class="chip ${lv[1]}">${lv[0]}</span>
+      <div class="mut">${s.m} dikuasai · ${s.t} dari ${s.total} soal pernah dicoba · akurasi ${s.acc}%</div>
+      <div class="row" style="margin-top:6px"><button class="pri" ${s.total ? '' : 'disabled'} onclick="openSetup(${i})">Mulai Latihan</button><button class="sm" onclick="askDel(${i})">Hapus</button></div></div>`;
+  }).join('') + '</div>';
+  return h;
+}
+
+function openSetup(i, pool) { V = { v: 'setup', i, pool: pool || null, msg: '' }; render(); }
+function weakOf(n) { const P = prog[n] || {}; return cache[n].filter(q => { const x = P[qkey(q)]; return !x || x.l !== 1; }); }
+function setup() {
+  const n = sheets[V.i], all = cache[n], tot = V.pool ? V.pool.length : all.length, weak = V.pool ? [] : weakOf(n);
+  const d = Math.min(20, tot);
+  return `<div class="card"><h3>${esc(nice(n))}</h3><div class="mut">${V.pool ? 'Mengulang soal yang tadi salah: ' + tot + ' soal' : tot + ' soal tersedia'}</div>
+    <p style="margin-bottom:4px">Jumlah soal yang ingin dikerjakan</p>
+    <input type="number" id="cnt" min="1" max="${tot}" value="${d}">
+    <div class="row" style="margin-top:8px">${[10, 25, 50].filter(x => x < tot).map(x => `<button class="sm" onclick="$('#cnt').value=${x}">${x}</button>`).join('')}<button class="sm" onclick="$('#cnt').value=${tot}">Semua (${tot})</button></div>
+    ${V.pool ? '' : `<p style="margin-bottom:4px">Ambil soal dari</p><select id="mode"><option value="all">Semua soal (${all.length})</option><option value="weak">Hanya yang belum dikuasai (${weak.length})</option></select>`}
+    <label class="ck"><input type="checkbox" id="so" checked> Acak urutan pilihan jawaban</label>
+    <div class="mut">Urutan soal selalu diacak.</div>
+    <div id="smsg" style="color:var(--no);margin-top:8px">${esc(V.msg)}</div>
+    <div class="row" style="margin-top:12px"><button class="pri" onclick="startQuiz()">Mulai Kuis</button><button onclick="V={v:'home'};render()">Kembali</button></div></div>`;
+}
+function buildItem(q, so) {
+  let opts = [];
+  ['A', 'B', 'C', 'D'].forEach(k => { const t = q['opsi_' + k.toLowerCase()]; if (t !== undefined && t !== null && String(t).trim() !== '') opts.push({ t: String(t), c: k === String(q.jawaban).trim().toUpperCase() }); });
+  if (so) opts = shuf(opts);
+  return { q, opts };
+}
+function startQuiz() {
+  const n = sheets[V.i], mode = $('#mode') ? $('#mode').value : 'all';
+  const pool = V.pool || (mode === 'weak' ? weakOf(n) : cache[n]);
+  if (!pool.length) { V.msg = 'Tidak ada soal pada pilihan ini. Semua soal sudah dikuasai!'; render(); return; }
+  const c = Math.max(1, Math.min(pool.length, parseInt($('#cnt').value) || 1)), so = $('#so').checked;
+  const items = shuf(pool).slice(0, c).map(q => buildItem(q, so)).filter(it => it.opts.length > 1 && it.opts.some(o => o.c));
+  if (!items.length) { V.msg = 'Soal tidak valid (pilihan/kunci jawaban kosong).'; render(); return; }
+  Q = { i: V.i, name: n, items, idx: 0, pick: null, res: [] };
+  V = { v: 'quiz' }; render();
+}
+function quiz() {
+  const it = Q.items[Q.idx], n = Q.items.length, sc = Q.res.filter(r => r.ok).length;
+  let h = `<div class="card"><div class="bar" style="margin-bottom:12px"><i style="width:${Q.idx / n * 100}%"></i></div>
+    <div class="row sb"><b>Soal ${Q.idx + 1} dari ${n}</b><span>Benar: ${sc}</span></div>
+    <h3 style="margin:14px 0 8px;font-weight:600">${esc(it.q.soal)}</h3>`;
+  it.opts.forEach((o, j) => {
+    let cls = 'opt';
+    if (Q.pick !== null) { if (o.c) cls += ' ok'; else if (j === Q.pick) cls += ' no'; }
+    h += `<button class="${cls}" ${Q.pick !== null ? 'disabled' : ''} onclick="pick(${j})"><b>${String.fromCharCode(65 + j)}.</b> ${esc(o.t)}</button>`;
+  });
+  if (Q.pick !== null) {
+    const ok = it.opts[Q.pick].c;
+    h += `<p><span class="chip ${ok ? 'ok' : 'no'}">${ok ? 'Benar' : 'Salah'}</span>${ok ? '' : ' Jawaban benar: <b>' + String.fromCharCode(65 + it.opts.findIndex(o => o.c)) + '</b>'}</p>
+      <button class="pri" onclick="nextQ()">${Q.idx + 1 < n ? 'Soal Berikutnya' : 'Lihat Hasil'}</button>`;
+  }
+  return h + `</div><button class="sm" onclick="endQuiz()">Keluar</button>`;
+}
+function pick(j) {
+  if (Q.pick !== null) return;
+  Q.pick = j;
+  const it = Q.items[Q.idx], ok = it.opts[j].c, P = prog[Q.name] = prog[Q.name] || {}, k = qkey(it.q), x = P[k] = P[k] || { n: 0, c: 0, l: 0 };
+  x.n++; if (ok) x.c++; x.l = ok ? 1 : 0; saveP();
+  Q.res.push({ it, pick: j, ok }); render();
+}
+function nextQ() { Q.pick = null; Q.idx++; V = { v: Q.idx >= Q.items.length ? 'result' : 'quiz' }; render(); }
+function endQuiz() { V = { v: 'home' }; render(); }
+function result() {
+  const n = Q.res.length, ok = Q.res.filter(r => r.ok).length, p = Math.round(ok / n * 100), w = Q.res.filter(r => !r.ok), s = stat(Q.name), lv = level(s.pct, s.t);
+  let h = `<div class="card center"><div class="mut">Hasil latihan</div><div class="big">${p}%</div><div>${ok} benar dari ${n} soal</div></div>
+    <div class="card"><div class="row sb"><b>Penguasaan ${esc(nice(Q.name))}</b><span class="pct">${s.pct}%</span></div><div class="bar"><i style="width:${s.pct}%"></i></div><span class="chip ${lv[1]}" style="margin-top:8px">${lv[0]}</span><div class="mut" style="margin-top:6px">${s.m} dari ${s.total} soal dikuasai · akurasi keseluruhan ${s.acc}%</div></div>`;
+  if (w.length) h += `<div class="card"><b>Soal yang salah (${w.length})</b>` + w.map(r => `<div class="wi"><div>${esc(r.it.q.soal)}</div><div style="color:var(--no)">Jawabanmu: ${esc(r.it.opts[r.pick].t)}</div><div style="color:var(--ok)">Benar: ${esc(r.it.opts.find(o => o.c).t)}</div></div>`).join('') + '</div>';
+  h += '<div class="row">' + (w.length ? '<button class="pri" onclick="retryWrong()">Ulangi yang salah</button>' : '') + `<button onclick="openSetup(${Q.i})">Kuis baru</button><button onclick="V={v:'home'};render()">Beranda</button></div>`;
+  return h;
+}
+function retryWrong() { openSetup(Q.i, Q.res.filter(r => !r.ok).map(r => r.it.q)); }
+
+/* ---------- modal ---------- */
+function modal(h) { $('#mbox').innerHTML = h; $('#modal').classList.remove('hidden'); }
+function closeModal() { $('#modal').classList.add('hidden'); }
+
+/* ---------- hapus mata kuliah ---------- */
+function askDel(i) {
+  modal(`<h3>Hapus mata kuliah?</h3><p>"<b>${esc(nice(sheets[i]))}</b>" beserta seluruh soal dan progres latihannya akan dihapus dari Google Sheets.</p>
+    <div class="row"><button class="danger" onclick="doDel(${i})">Ya, hapus</button><button onclick="closeModal()">Batal</button></div>`);
+}
+function removeLocal(i) { const n = sheets[i]; sheets.splice(i, 1); delete cache[n]; delete prog[n]; saveP(); closeModal(); render(); }
+async function doDel(i) {
+  const n = sheets[i]; modal('<p>Menghapus...</p>');
+  try {
+    const j = await api('action=deleteSheet&sheet=' + encodeURIComponent(n));
+    if (j.status === 'success') { removeLocal(i); return; }
+    throw new Error(j.message || '');
+  } catch (e) {
+    modal(`<h3>Belum bisa dihapus dari server</h3><p>Script Google Sheets-mu belum punya perintah hapus (<code>deleteSheet</code>), atau terjadi kendala koneksi.</p>
+      <p>Kamu bisa menyembunyikannya dari daftar ini saja (data di Google Sheets tetap aman), atau tambahkan kode hapus ke Apps Script lalu coba lagi.</p>
+      <div class="row"><button class="pri" onclick="hideLocal(${i})">Sembunyikan saja</button><button onclick="closeModal()">Tutup</button></div>`);
+  }
+}
+function hideLocal(i) { hidden.push(sheets[i]); saveH(); removeLocal(i); }
+
+/* ---------- upload ---------- */
+function openUpload() {
+  modal(`<h3>Upload Soal Baru ke Google Sheets</h3>
+    <p class="mut">Format header file Excel/CSV: <b>id, soal, opsi_a, opsi_b, opsi_c, opsi_d, jawaban</b></p>
+    <p style="margin-bottom:4px">Nama Mata Kuliah (nama sheet baru)</p><input type="text" id="up-name" placeholder="Misal: Manajemen_Keuangan">
+    <p style="margin-bottom:4px">Pilih file (.xlsx / .csv)</p><input type="file" id="up-file" accept=".xlsx,.xls,.csv">
+    <div id="up-msg" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end"><button onclick="closeModal()">Batal</button><button class="pri" id="up-btn" onclick="processUpload()">Unggah Sekarang</button></div>`);
+}
+function processUpload() {
+  const name = $('#up-name').value.trim().replace(/\s+/g, '_'), f = $('#up-file').files[0], m = $('#up-msg');
+  if (!name) { m.style.color = 'var(--no)'; m.textContent = 'Masukkan nama mata kuliah dulu.'; return; }
+  if (!f) { m.style.color = 'var(--no)'; m.textContent = 'Pilih file soal dulu.'; return; }
+  const btn = $('#up-btn'); btn.disabled = true; btn.textContent = 'Mengunggah...';
+  const rd = new FileReader();
+  rd.onload = async e => {
     try {
-      const res = await fetch(`${API_URL}?action=getSheets`);
-      const json = await res.json();
-      if (json.status === 'success') {
-        const select = document.getElementById('matkul-select');
-        select.innerHTML = '';
-        json.sheets.forEach(name => {
-          const opt = document.createElement('option');
-          opt.value = name;
-          opt.innerText = name.replace(/_/g, ' ');
-          select.appendChild(opt);
-        });
-        if (json.sheets.length > 0) loadQuestions();
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Gagal memuat daftar mata kuliah.');
-    }
-  }
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ matkul: name, questions: data }) });
+      const j = await r.json();
+      if (j.status === 'success') { delete cache[name]; closeModal(); loadSheets(); }
+      else { m.style.color = 'var(--no)'; m.textContent = 'Gagal upload: ' + j.message; btn.disabled = false; btn.textContent = 'Unggah Sekarang'; }
+    } catch (err) { m.style.color = 'var(--no)'; m.textContent = 'Terjadi kesalahan saat mengunggah.'; btn.disabled = false; btn.textContent = 'Unggah Sekarang'; }
+  };
+  rd.readAsArrayBuffer(f);
+}
 
-  async function loadQuestions() {
-    const selectedMatkul = document.getElementById('matkul-select').value;
-    if (!selectedMatkul) return;
-
-    document.getElementById('loading').classList.remove('hidden');
-    document.getElementById('quiz-container').classList.add('hidden');
-    document.getElementById('result-container').classList.add('hidden');
-
-    try {
-      const res = await fetch(`${API_URL}?action=getQuestions&sheet=${encodeURIComponent(selectedMatkul)}`);
-      const json = await res.json();
-      document.getElementById('loading').classList.add('hidden');
-
-      if (json.status === 'success' && json.data.length > 0) {
-        questions = json.data;
-        currentIndex = 0;
-        score = 0;
-        document.getElementById('score-counter').innerText = 'Skor: 0';
-        document.getElementById('quiz-container').classList.remove('hidden');
-        showQuestion();
-      } else {
-        alert('Sheet ini belum memiliki soal atau data kosong.');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Gagal mengambil soal dari server.');
-    }
-  }
-
-  function showQuestion() {
-    selected = false;
-    document.getElementById('next-btn').classList.add('hidden');
-    const q = questions[currentIndex];
-    
-    document.getElementById('question-number').innerText = `Soal ${currentIndex + 1} dari ${questions.length}`;
-    document.getElementById('progress').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
-    document.getElementById('question-text').innerText = `${q.id}. ${q.soal}`;
-
-    const optsContainer = document.getElementById('options-container');
-    optsContainer.innerHTML = '';
-
-    const options = [
-      { key: 'A', text: q.opsi_a },
-      { key: 'B', text: q.opsi_b },
-      { key: 'C', text: q.opsi_c },
-      { key: 'D', text: q.opsi_d }
-    ];
-
-    options.forEach(opt => {
-      const btn = document.createElement('button');
-      btn.className = 'option-btn';
-      btn.innerText = `${opt.key}. ${opt.text}`;
-      btn.onclick = () => checkAnswer(opt.key, q.jawaban, btn);
-      optsContainer.appendChild(btn);
-    });
-  }
-
-  function checkAnswer(selectedKey, correctKey, btnElement) {
-    if (selected) return;
-    selected = true;
-
-    const cleanCorrect = String(correctKey).trim().toUpperCase();
-    const allButtons = document.querySelectorAll('.option-btn');
-    
-    allButtons.forEach(btn => {
-      if (btn.innerText.startsWith(cleanCorrect + '.')) {
-        btn.classList.add('correct');
-      }
-    });
-
-    if (selectedKey.toUpperCase() === cleanCorrect) {
-      score++;
-      document.getElementById('score-counter').innerText = `Skor: ${score}`;
-    } else {
-      btnElement.classList.add('wrong');
-    }
-
-    document.getElementById('next-btn').classList.remove('hidden');
-  }
-
-  function nextQuestion() {
-    currentIndex++;
-    if (currentIndex < questions.length) {
-      showQuestion();
-    } else {
-      showResult();
-    }
-  }
-
-  function showResult() {
-    document.getElementById('quiz-container').classList.add('hidden');
-    document.getElementById('result-container').classList.remove('hidden');
-    document.getElementById('final-score').innerText = score;
-    document.getElementById('total-q').innerText = questions.length;
-  }
-
-  function restartQuiz() {
-    currentIndex = 0;
-    score = 0;
-    document.getElementById('score-counter').innerText = `Skor: 0`;
-    document.getElementById('result-container').classList.add('hidden');
-    document.getElementById('quiz-container').classList.remove('hidden');
-    showQuestion();
-  }
-
-  function toggleModal(show) {
-    const modal = document.getElementById('upload-modal');
-    if (show) {
-      modal.classList.remove('hidden');
-    } else {
-      modal.classList.add('hidden');
-    }
-  }
-
-  function processUpload() {
-    const matkulName = document.getElementById('upload-matkul-name').value.trim().replace(/\s+/g, '_');
-    const fileInput = document.getElementById('upload-file');
-    
-    if (!matkulName) return alert('Masukkan nama mata kuliah terlebih dahulu!');
-    if (!fileInput.files.length) return alert('Pilih file Excel/CSV soal terlebih dahulu!');
-
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-
-    const btn = document.getElementById('btn-submit-upload');
-    btn.disabled = true;
-    btn.innerText = "Mengunggah...";
-
-    reader.onload = async function(e) {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            matkul: matkulName,
-            questions: jsonData
-          })
-        });
-        const json = await res.json();
-        btn.disabled = false;
-        btn.innerText = "Unggah Sekarang";
-
-        if (json.status === 'success') {
-          alert(json.message);
-          toggleModal(false);
-          loadMatkulList();
-        } else {
-          alert('Gagal upload: ' + json.message);
-        }
-      } catch (err) {
-        btn.disabled = false;
-        btn.innerText = "Unggah Sekarang";
-        console.error(err);
-        alert('Terjadi kesalahan saat mengunggah.');
-      }
-    };
-
-    reader.readAsArrayBuffer(file);
-  }
-
-  // Load awal
-  loadMatkulList();
+loadSheets();
 </script>
 </body>
 </html>
