@@ -181,4 +181,217 @@
     <p style="font-size: 13px; color: #666;">Format header file Excel/CSV: <b>id, soal, opsi_a, opsi_b, opsi_c, opsi_d, jawaban</b></p>
     
     <div class="form-group">
-      <label>Nama Mata Kul
+      <label>Nama Mata Kuliah (Nama Sheet Baru):</label>
+      <input type="text" id="upload-matkul-name" placeholder="Misal: Manajemen_Keuangan">
+    </div>
+    
+    <div class="form-group">
+      <label>Pilih File (.xlsx / .csv):</label>
+      <input type="file" id="upload-file" accept=".xlsx, .xls, .csv">
+    </div>
+
+    <div style="text-align: right; margin-top: 20px;">
+      <button class="btn" style="background:#888; color:white; margin-right: 8px;" onclick="toggleModal(false)">Batal</button>
+      <button class="btn" id="btn-submit-upload" onclick="processUpload()">Unggah Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbz2aKwmjfjMFjCJU_o3NHHRQjY-ozJjJGGCaJf7WxA_WLlCHtituMWm2BhSbwWctrjJdw/exec";
+
+  let questions = [];
+  let currentIndex = 0;
+  let score = 0;
+  let selected = false;
+
+  async function loadMatkulList() {
+    try {
+      const res = await fetch(`${API_URL}?action=getSheets`);
+      const json = await res.json();
+      if (json.status === 'success') {
+        const select = document.getElementById('matkul-select');
+        select.innerHTML = '';
+        json.sheets.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.innerText = name.replace(/_/g, ' ');
+          select.appendChild(opt);
+        });
+        if (json.sheets.length > 0) loadQuestions();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Gagal memuat daftar mata kuliah.');
+    }
+  }
+
+  async function loadQuestions() {
+    const selectedMatkul = document.getElementById('matkul-select').value;
+    if (!selectedMatkul) return;
+
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('quiz-container').classList.add('hidden');
+    document.getElementById('result-container').classList.add('hidden');
+
+    try {
+      const res = await fetch(`${API_URL}?action=getQuestions&sheet=${encodeURIComponent(selectedMatkul)}`);
+      const json = await res.json();
+      document.getElementById('loading').classList.add('hidden');
+
+      if (json.status === 'success' && json.data.length > 0) {
+        questions = json.data;
+        currentIndex = 0;
+        score = 0;
+        document.getElementById('score-counter').innerText = 'Skor: 0';
+        document.getElementById('quiz-container').classList.remove('hidden');
+        showQuestion();
+      } else {
+        alert('Sheet ini belum memiliki soal atau data kosong.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Gagal mengambil soal dari server.');
+    }
+  }
+
+  function showQuestion() {
+    selected = false;
+    document.getElementById('next-btn').classList.add('hidden');
+    const q = questions[currentIndex];
+    
+    document.getElementById('question-number').innerText = `Soal ${currentIndex + 1} dari ${questions.length}`;
+    document.getElementById('progress').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+    document.getElementById('question-text').innerText = `${q.id}. ${q.soal}`;
+
+    const optsContainer = document.getElementById('options-container');
+    optsContainer.innerHTML = '';
+
+    const options = [
+      { key: 'A', text: q.opsi_a },
+      { key: 'B', text: q.opsi_b },
+      { key: 'C', text: q.opsi_c },
+      { key: 'D', text: q.opsi_d }
+    ];
+
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.innerText = `${opt.key}. ${opt.text}`;
+      btn.onclick = () => checkAnswer(opt.key, q.jawaban, btn);
+      optsContainer.appendChild(btn);
+    });
+  }
+
+  function checkAnswer(selectedKey, correctKey, btnElement) {
+    if (selected) return;
+    selected = true;
+
+    const cleanCorrect = String(correctKey).trim().toUpperCase();
+    const allButtons = document.querySelectorAll('.option-btn');
+    
+    allButtons.forEach(btn => {
+      if (btn.innerText.startsWith(cleanCorrect + '.')) {
+        btn.classList.add('correct');
+      }
+    });
+
+    if (selectedKey.toUpperCase() === cleanCorrect) {
+      score++;
+      document.getElementById('score-counter').innerText = `Skor: ${score}`;
+    } else {
+      btnElement.classList.add('wrong');
+    }
+
+    document.getElementById('next-btn').classList.remove('hidden');
+  }
+
+  function nextQuestion() {
+    currentIndex++;
+    if (currentIndex < questions.length) {
+      showQuestion();
+    } else {
+      showResult();
+    }
+  }
+
+  function showResult() {
+    document.getElementById('quiz-container').classList.add('hidden');
+    document.getElementById('result-container').classList.remove('hidden');
+    document.getElementById('final-score').innerText = score;
+    document.getElementById('total-q').innerText = questions.length;
+  }
+
+  function restartQuiz() {
+    currentIndex = 0;
+    score = 0;
+    document.getElementById('score-counter').innerText = `Skor: 0`;
+    document.getElementById('result-container').classList.add('hidden');
+    document.getElementById('quiz-container').classList.remove('hidden');
+    showQuestion();
+  }
+
+  function toggleModal(show) {
+    const modal = document.getElementById('upload-modal');
+    if (show) {
+      modal.classList.remove('hidden');
+    } else {
+      modal.classList.add('hidden');
+    }
+  }
+
+  function processUpload() {
+    const matkulName = document.getElementById('upload-matkul-name').value.trim().replace(/\s+/g, '_');
+    const fileInput = document.getElementById('upload-file');
+    
+    if (!matkulName) return alert('Masukkan nama mata kuliah terlebih dahulu!');
+    if (!fileInput.files.length) return alert('Pilih file Excel/CSV soal terlebih dahulu!');
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    const btn = document.getElementById('btn-submit-upload');
+    btn.disabled = true;
+    btn.innerText = "Mengunggah...";
+
+    reader.onload = async function(e) {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            matkul: matkulName,
+            questions: jsonData
+          })
+        });
+        const json = await res.json();
+        btn.disabled = false;
+        btn.innerText = "Unggah Sekarang";
+
+        if (json.status === 'success') {
+          alert(json.message);
+          toggleModal(false);
+          loadMatkulList();
+        } else {
+          alert('Gagal upload: ' + json.message);
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = "Unggah Sekarang";
+        console.error(err);
+        alert('Terjadi kesalahan saat mengunggah.');
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  }
+
+  // Load awal
+  loadMatkulList();
+</script>
+</body>
+</html>
