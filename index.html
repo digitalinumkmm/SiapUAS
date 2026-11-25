@@ -576,7 +576,6 @@
     document.getElementById('upload-modal').className = show ? 'modal' : 'modal hidden';
   }
 
-  // UPLOAD DENGAN FORM SUBMIT KE IFRAME TERSEMBUNYI (ANTI CORS)
   function processUpload() {
     const rawName = document.getElementById('upload-matkul-name').value.trim();
     let matkulName = rawName.replace(/[\(\)\&\/\?\*\\:\[\]]/g, '').trim().replace(/\s+/g, '_');
