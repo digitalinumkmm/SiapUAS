@@ -348,7 +348,6 @@
   </div>
 </div>
 
-<!-- Form tersembunyi untuk bypass CORS -->
 <iframe name="hidden-iframe" id="hidden-iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
 <form id="hidden-upload-form" method="POST" target="hidden-iframe" style="display:none;">
   <input type="hidden" name="matkul" id="form-matkul">
@@ -366,16 +365,25 @@
   let currentMatkulName = "";
   let isSubmitting = false;
 
-  async function loadMatkulList() {
+  // FUNGSI JSONP (Bypass pembatasan CORS browser)
+  function fetchJSONP(url, callbackName) {
+    const script = document.createElement('script');
+    script.src = `${url}&callback=${callbackName}`;
+    script.onerror = function() {
+      console.error('JSONP Request failed');
+      document.getElementById('loading-state').classList.add('hidden');
+      document.getElementById('empty-state').classList.remove('hidden');
+    };
+    document.body.appendChild(script);
+  }
+
+  function loadMatkulList() {
     document.getElementById('loading-state').classList.remove('hidden');
     document.getElementById('empty-state').classList.add('hidden');
     document.getElementById('matkul-grid').classList.add('hidden');
 
-    try {
-      const res = await fetch(`${API_URL}?action=getSheets`);
-      const json = await res.json();
+    window.onMatkulLoaded = function(json) {
       document.getElementById('loading-state').classList.add('hidden');
-
       if (json.status === 'success' && json.sheets && json.sheets.length > 0) {
         document.getElementById('matkul-count-title').innerText = `Mata Kuliah (${json.sheets.length})`;
         renderMatkulGrid(json.sheets);
@@ -383,11 +391,9 @@
         document.getElementById('matkul-count-title').innerText = `Mata Kuliah (0)`;
         document.getElementById('empty-state').classList.remove('hidden');
       }
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loading-state').classList.add('hidden');
-      document.getElementById('empty-state').classList.remove('hidden');
-    }
+    };
+
+    fetchJSONP(`${API_URL}?action=getSheets`, 'onMatkulLoaded');
   }
 
   function renderMatkulGrid(sheets) {
@@ -409,17 +415,14 @@
     grid.classList.remove('hidden');
   }
 
-  async function openSetupModal(matkulName) {
+  function openSetupModal(matkulName) {
     currentMatkulName = matkulName;
     const cleanName = matkulName.replace(/_/g, ' ');
     document.getElementById('setup-matkul-title').innerText = `Latihan: ${cleanName}`;
     document.getElementById('setup-total-available').innerText = "Memuat total soal...";
     toggleSetupModal(true);
 
-    try {
-      const res = await fetch(`${API_URL}?action=getQuestions&sheet=${encodeURIComponent(matkulName)}`);
-      const json = await res.json();
-
+    window.onQuestionsLoaded = function(json) {
       if (json.status === 'success' && json.data.length > 0) {
         rawQuestions = json.data;
         document.getElementById('setup-total-available').innerText = `Total soal tersedia: ${rawQuestions.length} soal`;
@@ -427,11 +430,9 @@
         alert('Data soal untuk mata kuliah ini kosong.');
         toggleSetupModal(false);
       }
-    } catch (err) {
-      console.error(err);
-      alert('Gagal mengambil data soal dari server.');
-      toggleSetupModal(false);
-    }
+    };
+
+    fetchJSONP(`${API_URL}?action=getQuestions&sheet=${encodeURIComponent(matkulName)}`, 'onQuestionsLoaded');
   }
 
   function toggleSetupModal(show) {
