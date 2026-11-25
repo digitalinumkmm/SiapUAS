@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Latihan Soal UAS - Multi Matkul & Uploader</title>
-  <!-- Library XLSX untuk membaca file Excel (.xlsx / .csv) langsung di browser -->
+  <!-- Library XLSX untuk membaca file Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -29,7 +29,7 @@
     header {
       background-color: var(--primary);
       color: white;
-      padding: 20px;
+      padding: 25px 20px;
       border-radius: 8px;
       text-align: center;
       margin-bottom: 20px;
@@ -42,12 +42,13 @@
       background: rgba(255, 255, 255, 0.2);
       color: white;
       border: 1px solid white;
-      padding: 6px 12px;
+      padding: 6px 14px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 13px;
+      font-weight: bold;
     }
-    .admin-btn:hover { background: rgba(255, 255, 255, 0.3); }
+    .admin-btn:hover { background: rgba(255, 255, 255, 0.35); }
     .card {
       background: var(--card);
       padding: 25px;
@@ -62,13 +63,14 @@
       border-radius: 6px;
       border: 1px solid #ccc;
       margin-top: 10px;
+      box-sizing: border-box;
     }
     .btn {
       background-color: var(--primary);
       color: white;
       border: none;
       padding: 10px 20px;
-      font-size: 16px;
+      font-size: 15px;
       border-radius: 5px;
       cursor: pointer;
       margin-top: 15px;
@@ -104,16 +106,17 @@
       width: 0%;
       transition: width 0.3s;
     }
-    .hidden { display: none; }
-    /* Modal Styling */
+    .hidden { display: none !important; }
+    
+    /* Perbaikan Modal Styling */
     .modal {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.6);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 999;
+      z-index: 9999;
     }
     .modal-content {
       background: white;
@@ -121,10 +124,11 @@
       border-radius: 8px;
       max-width: 500px;
       width: 90%;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
-    .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
+    .form-group input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
   </style>
 </head>
 <body>
@@ -132,8 +136,8 @@
 <div class="container">
   <header>
     <button class="admin-btn" onclick="toggleModal(true)">+ Upload Soal Baru</button>
-    <h1>Portal UAS Interaktif</h1>
-    <p>Latihan Soal & Bank Soal Multi-Mata Kuliah</p>
+    <h1 style="margin: 0 0 5px 0;">Portal UAS Interaktif</h1>
+    <p style="margin: 0; opacity: 0.9;">Latihan Soal & Bank Soal Multi-Mata Kuliah</p>
   </header>
 
   <!-- Pilihan Mata Kuliah -->
@@ -170,8 +174,11 @@
   </div>
 </div>
 
-<!-- Modal Upload Soal Baru (Admin Panel) -->
+<!-- Modal Upload Soal Baru (Ditutup secara default) -->
 <div id="upload-modal" class="modal hidden">
   <div class="modal-content">
-    <h3>Upload Soal Baru ke Google Sheets</h3>
-    <p style="font-size: 13px; color: #666;">Format header file Excel/CSV: <b>id, soal, opsi_a, opsi_b, opsi_c, opsi_
+    <h3 style="margin-top: 0;">Upload Soal Baru ke Google Sheets</h3>
+    <p style="font-size: 13px; color: #666;">Format header file Excel/CSV: <b>id, soal, opsi_a, opsi_b, opsi_c, opsi_d, jawaban</b></p>
+    
+    <div class="form-group">
+      <label>Nama Mata Kul
