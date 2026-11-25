@@ -260,7 +260,7 @@
     <p class="subtitle">Latihan Soal & Bank Soal Multi-Mata Kuliah</p>
   </header>
 
-  <!-- Halaman Utam: Daftar Matkul -->
+  <!-- Halaman Utama: Daftar Matkul -->
   <div id="main-view">
     <div class="section-header">
       <div class="section-title" id="matkul-count-title">Mata Kuliah (0)</div>
@@ -316,7 +316,7 @@
   </div>
 </div>
 
-<!-- Modal Setting Jumlah Soal Sebelum Mengerjakan -->
+<!-- Modal Setting Jumlah Soal -->
 <div id="setup-modal" class="modal hidden">
   <div class="modal-content">
     <h3 style="margin-top:0;" id="setup-matkul-title">Pengaturan Latihan</h3>
@@ -365,7 +365,9 @@
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzL2S_n0KBuFIO-3KOP-bfibH4bSyOggf1xP--pJZRxqrLzYxtQKpz-W1kKUz1_5_fc/exec";
+  // URL Deployment Google Apps Script milikmu
+  const API_URL = "https://script.google.com/macros/s/AKfycbL2S_n0KBuFIO-3KOP-bfibH4bSyOggf1xP--pJZRxqrLzYxtQKpz-W1kKUz1_5_fc/exec";
+
   let rawQuestions = [];
   let activeQuestions = [];
   let currentIndex = 0;
@@ -481,7 +483,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzL2S_n0KBuFIO-3KOP-bfi
       targetCount = Math.min(parseInt(countSelect), rawQuestions.length);
     }
 
-    // Acak seluruh soal lalu ambil sebanyak targetCount
     const shuffledAll = shuffleArray(rawQuestions);
     activeQuestions = shuffledAll.slice(0, targetCount);
 
@@ -508,7 +509,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzL2S_n0KBuFIO-3KOP-bfi
     const optsContainer = document.getElementById('options-container');
     optsContainer.innerHTML = '';
 
-    // Acak pilihan jawaban agar posisi A, B, C, D tidak selalu sama
     const options = shuffleArray([
       { key: 'A', text: q.opsi_a },
       { key: 'B', text: q.opsi_b },
@@ -533,9 +533,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzL2S_n0KBuFIO-3KOP-bfi
     const cleanCorrect = String(correctKey).trim().toUpperCase();
     const allButtons = document.querySelectorAll('.option-btn');
     
-    // Cari dan tandai jawaban yang benar
     allButtons.forEach(btn => {
-      // Pembuktian jawaban benar
       if (btn.innerText.includes(getOptionTextByKey(activeQuestions[currentIndex], cleanCorrect))) {
         btn.classList.add('correct');
       }
@@ -586,10 +584,75 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzL2S_n0KBuFIO-3KOP-bfi
     loadMatkulList();
   }
 
-  // 4. Modal Upload Bank Soal
+  // 4. Modal Upload Bank Soal (Dengan Fitur Penanganan Eror & CORS)
   function toggleUploadModal(show) {
     document.getElementById('upload-modal').className = show ? 'modal' : 'modal hidden';
   }
 
   function processUpload() {
-    const rawName = document.getElementById('upload-matkul-name
+    const rawName = document.getElementById('upload-matkul-name').value.trim();
+    const matkulName = rawName.replace(/\s+/g, '_');
+    const fileInput = document.getElementById('upload-file');
+    
+    if (!matkulName) return alert('Masukkan nama mata kuliah terlebih dahulu!');
+    if (!fileInput.files.length) return alert('Pilih file Excel/CSV soal terlebih dahulu!');
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    const btn = document.getElementById('btn-submit-upload');
+    btn.disabled = true;
+    btn.innerText = "Mengunggah...";
+
+    reader.onload = async function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+        if (!jsonData || jsonData.length === 0) {
+          btn.disabled = false;
+          btn.innerText = "Unggah Sekarang";
+          return alert('File Excel/CSV tidak memiliki data atau format header salah.');
+        }
+
+        // Mengirimkan payload menggunakan multipart / text agar aman dari masalah CORS
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            matkul: matkulName,
+            questions: jsonData
+          })
+        });
+
+        const json = await res.json();
+        btn.disabled = false;
+        btn.innerText = "Unggah Sekarang";
+
+        if (json.status === 'success') {
+          alert(json.message);
+          toggleUploadModal(false);
+          document.getElementById('upload-matkul-name').value = '';
+          fileInput.value = '';
+          loadMatkulList();
+        } else {
+          alert('Gagal upload: ' + json.message);
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = "Unggah Sekarang";
+        console.error(err);
+        alert('Terjadi kesalahan saat mengunggah. Pastikan Apps Script telah di-deploy ulang dengan versi New Version.');
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  }
+
+  // Load pertama kali saat halaman dibuka
+  loadMatkulList();
+</script>
+</body>
+</html>
