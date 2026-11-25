@@ -365,7 +365,6 @@
 </div>
 
 <script>
-  // URL Deployment Google Apps Script milikmu
   const API_URL = "https://script.google.com/macros/s/AKfycbL2S_n0KBuFIO-3KOP-bfibH4bSyOggf1xP--pJZRxqrLzYxtQKpz-W1kKUz1_5_fc/exec";
 
   let rawQuestions = [];
@@ -375,7 +374,6 @@
   let selected = false;
   let currentMatkulName = "";
 
-  // 1. Ambil daftar Mata Kuliah saat web dimuat
   async function loadMatkulList() {
     document.getElementById('loading-state').classList.remove('hidden');
     document.getElementById('empty-state').classList.add('hidden');
@@ -419,7 +417,6 @@
     grid.classList.remove('hidden');
   }
 
-  // 2. Membuka Modal Setting Jumlah Soal
   async function openSetupModal(matkulName) {
     currentMatkulName = matkulName;
     const cleanName = matkulName.replace(/_/g, ' ');
@@ -459,7 +456,6 @@
     }
   }
 
-  // 3. Mengacak Array Soal & Memulai Latihan
   function shuffleArray(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -584,14 +580,16 @@
     loadMatkulList();
   }
 
-  // 4. Modal Upload Bank Soal (Dengan Fitur Penanganan Eror & CORS)
   function toggleUploadModal(show) {
     document.getElementById('upload-modal').className = show ? 'modal' : 'modal hidden';
   }
 
   function processUpload() {
     const rawName = document.getElementById('upload-matkul-name').value.trim();
-    const matkulName = rawName.replace(/\s+/g, '_');
+    
+    // Pembersihan nama sheet dari karakter terlarang Google Sheets: ( ) & / \ ? * : [ ]
+    let matkulName = rawName.replace(/[\(\)\&\/\?\*\\:\[\]]/g, '').trim().replace(/\s+/g, '_');
+    
     const fileInput = document.getElementById('upload-file');
     
     if (!matkulName) return alert('Masukkan nama mata kuliah terlebih dahulu!');
@@ -614,17 +612,17 @@
         if (!jsonData || jsonData.length === 0) {
           btn.disabled = false;
           btn.innerText = "Unggah Sekarang";
-          return alert('File Excel/CSV tidak memiliki data atau format header salah.');
+          return alert('File Excel/CSV tidak memiliki data.');
         }
 
-        // Mengirimkan payload menggunakan multipart / text agar aman dari masalah CORS
+        // Pengiriman data menggunakan FormData / URLSearchParams untuk menghindari restriksi CORS
+        const formData = new URLSearchParams();
+        formData.append('matkul', matkulName);
+        formData.append('questions', JSON.stringify(jsonData));
+
         const res = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            matkul: matkulName,
-            questions: jsonData
-          })
+          body: formData
         });
 
         const json = await res.json();
@@ -644,14 +642,13 @@
         btn.disabled = false;
         btn.innerText = "Unggah Sekarang";
         console.error(err);
-        alert('Terjadi kesalahan saat mengunggah. Pastikan Apps Script telah di-deploy ulang dengan versi New Version.');
+        alert('Terjadi kesalahan saat mengunggah. Pastikan Apps Script telah di-deploy ulang.');
       }
     };
 
     reader.readAsArrayBuffer(file);
   }
 
-  // Load pertama kali saat halaman dibuka
   loadMatkulList();
 </script>
 </body>
