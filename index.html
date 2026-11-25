@@ -348,8 +348,14 @@
   </div>
 </div>
 
+<!-- Form tersembunyi untuk bypass CORS -->
+<iframe name="hidden-iframe" id="hidden-iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
+<form id="hidden-upload-form" method="POST" target="hidden-iframe" style="display:none;">
+  <input type="hidden" name="matkul" id="form-matkul">
+  <input type="hidden" name="questions" id="form-questions">
+</form>
+
 <script>
-  // Link Web App Google Apps Script
   const API_URL = "https://script.google.com/macros/s/AKfycbL2S_n0KBuFIO-3KOP-bfibH4bSyOggf1xP--pJZRxqrLzYxtQKpz-W1kKUz1_5_fc/exec";
 
   let rawQuestions = [];
@@ -358,6 +364,7 @@
   let score = 0;
   let selected = false;
   let currentMatkulName = "";
+  let isSubmitting = false;
 
   async function loadMatkulList() {
     document.getElementById('loading-state').classList.remove('hidden');
@@ -569,8 +576,8 @@
     document.getElementById('upload-modal').className = show ? 'modal' : 'modal hidden';
   }
 
-  // FITUR UPLOAD BEBAS EROR CORS (text/plain mode)
-  async function processUpload() {
+  // UPLOAD DENGAN FORM SUBMIT KE IFRAME TERSEMBUNYI (ANTI CORS)
+  function processUpload() {
     const rawName = document.getElementById('upload-matkul-name').value.trim();
     let matkulName = rawName.replace(/[\(\)\&\/\?\*\\:\[\]]/g, '').trim().replace(/\s+/g, '_');
     const fileInput = document.getElementById('upload-file');
@@ -583,8 +590,9 @@
 
     const btn = document.getElementById('btn-submit-upload');
     btn.disabled = true;
+    btn.innerText = "Mengunggah...";
 
-    reader.onload = async function(e) {
+    reader.onload = function(e) {
       try {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
@@ -597,49 +605,41 @@
           return alert('File Excel/CSV tidak memiliki data.');
         }
 
-        const batchSize = 25;
-        const totalBatches = Math.ceil(jsonData.length / batchSize);
+        const form = document.getElementById('hidden-upload-form');
+        form.action = API_URL;
+        document.getElementById('form-matkul').value = matkulName;
+        document.getElementById('form-questions').value = JSON.stringify(jsonData);
 
-        for (let b = 0; b < totalBatches; b++) {
-          const chunk = jsonData.slice(b * batchSize, (b + 1) * batchSize);
-          btn.innerText = `Mengunggah... (${b + 1}/${totalBatches})`;
-
-          const payload = {
-            matkul: matkulName,
-            questions: chunk,
-            isFirstBatch: b === 0
-          };
-
-          // Pengiriman menggunakan text/plain agar bebas dari blokir CORS Google Apps Script
-          const res = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload)
-          });
-
-          const resJson = await res.json();
-          if (resJson.status !== 'success') {
-            throw new Error(resJson.message || 'Gagal pada batch ' + (b + 1));
-          }
-        }
-
-        btn.disabled = false;
-        btn.innerText = "Unggah Sekarang";
-        alert(`Berhasil mengunggah total ${jsonData.length} soal ke ${matkulName.replace(/_/g, ' ')}!`);
-        toggleUploadModal(false);
-        document.getElementById('upload-matkul-name').value = '';
-        fileInput.value = '';
-        loadMatkulList();
+        isSubmitting = true;
+        form.submit();
 
       } catch (err) {
         btn.disabled = false;
         btn.innerText = "Unggah Sekarang";
         console.error(err);
-        alert('Gagal upload: ' + err.message);
+        alert('Gagal membaca file: ' + err.message);
       }
     };
 
     reader.readAsArrayBuffer(file);
+  }
+
+  function handleIframeLoad() {
+    if (!isSubmitting) return;
+    isSubmitting = false;
+
+    const btn = document.getElementById('btn-submit-upload');
+    btn.disabled = false;
+    btn.innerText = "Unggah Sekarang";
+
+    alert('Berhasil mengunggah soal!');
+    toggleUploadModal(false);
+    document.getElementById('upload-matkul-name').value = '';
+    document.getElementById('upload-file').value = '';
+    
+    setTimeout(() => {
+      loadMatkulList();
+    }, 1500);
   }
 
   loadMatkulList();
