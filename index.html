@@ -60,11 +60,22 @@ const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { cons
 const nice = n => String(n).replace(/_/g, ' ');
 
 let sheets = [], cache = {}, V = { v: 'home' }, Q = null, prog = {}, hidden = [], hist = [], pending = {}, pendS = [];
-try { prog = JSON.parse(localStorage.getItem('uas_progress_v1') || '{}'); hidden = JSON.parse(localStorage.getItem('uas_hidden_v1') || '[]'); } catch (e) {}
+try {
+  prog = JSON.parse(localStorage.getItem('uas_progress_v1') || '{}');
+  hidden = JSON.parse(localStorage.getItem('uas_hidden_v1') || '[]');
+  hist = JSON.parse(localStorage.getItem('uas_hist_v1') || '[]');
+} catch (e) {}
 const saveP = () => { try { localStorage.setItem('uas_progress_v1', JSON.stringify(prog)); } catch (e) {} };
 const saveH = () => { try { localStorage.setItem('uas_hidden_v1', JSON.stringify(hidden)); } catch (e) {} };
+const saveHist = () => { try { localStorage.setItem('uas_hist_v1', JSON.stringify(hist.slice(-500))); } catch (e) {} };
 const qkey = q => q.id + ':' + String(q.soal).slice(0, 40);
 async function api(p) { const r = await fetch(API_URL + '?' + p); return r.json(); }
+async function post(body) {
+  const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) });
+  const j = await r.json();
+  if (j.status !== 'success') throw new Error(j.message || 'gagal');
+  return j;
+}
 
 /* ---------- data ---------- */
 async function loadSheets() {
@@ -101,20 +112,35 @@ function level(p, t) {
 
 /* ---------- sinkron progres ke Google Sheets ---------- */
 function setSync(ok) { const e = $('#sync'); if (e) e.textContent = ok ? '☁️ Progres & riwayat tersimpan di Google Sheets' : '⚠️ Progres hanya tersimpan di perangkat ini (Apps Script belum diperbarui / offline)'; }
+
+// Menggabungkan data lokal (browser) dengan data server. Yang lebih banyak percobaannya dipakai.
 async function loadProgress() {
   try {
     let j = await api('action=getProgress');
     if (j.status !== 'success' || !j.progress) throw new Error();
-    const migrated = localStorage.getItem('uas_migrated') === '1';
-    if (!migrated && Object.keys(prog).length) {
-      const ups = [];
-      Object.keys(prog).forEach(m => Object.keys(prog[m]).forEach(k => ups.push({ matkul: m, key: k, n: prog[m][k].n, c: prog[m][k].c, l: prog[m][k].l })));
-      const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveProgress', updates: ups }) });
-      const w = await r.json(); if (w.status !== 'success') throw new Error();
+    const sp = j.progress, ups = [];
+    Object.keys(prog).forEach(m => Object.keys(prog[m]).forEach(k => {
+      const l = prog[m][k], s = sp[m] && sp[m][k];
+      if (l && l.n && (!s || l.n > s.n)) ups.push({ matkul: m, key: k, n: l.n, c: l.c, l: l.l });
+    }));
+    const serverT = new Set((j.history || []).map(h => h.t));
+    const newSess = hist.filter(h => !serverT.has(h.t));
+
+    if (ups.length || newSess.length) {
+      const CH = 200;
+      let first = true;
+      for (let i = 0; i < Math.max(ups.length, 1); i += CH) {
+        await post({ action: 'saveProgress', updates: ups.slice(i, i + CH), sessions: first ? newSess : [] });
+        first = false;
+      }
       j = await api('action=getProgress');
+      if (j.status !== 'success' || !j.progress) throw new Error();
     }
-    prog = j.progress; hist = j.history || []; saveP();
-    try { localStorage.setItem('uas_migrated', '1'); } catch (e) {}
+    prog = j.progress;
+    const seen = new Set(), merged = [];
+    (j.history || []).concat(hist).forEach(h => { if (!seen.has(h.t)) { seen.add(h.t); merged.push(h); } });
+    hist = merged.sort((a, b) => a.t - b.t);
+    saveP(); saveHist();
     setSync(true);
   } catch (e) { setSync(false); }
   if (V.v === 'home') render();
@@ -132,7 +158,7 @@ async function flush() {
 function finishSession() {
   if (!Q || !Q.res.length) return;
   const s = { matkul: Q.name, total: Q.res.length, benar: Q.res.filter(r => r.ok).length, t: Date.now() };
-  hist.push(s); pendS.push(s); flush();
+  hist.push(s); saveHist(); pendS.push(s); flush();
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
 function askHist(i) {
@@ -144,8 +170,8 @@ function askHist(i) {
 function render() { $('#app').innerHTML = ({ home, setup, quiz, result })[V.v](); }
 
 function home() {
-  let T = 0, M = 0, loaded = 0;
-  sheets.forEach(n => { const s = stat(n); if (s) { T += s.total; M += s.m; loaded++; } });
+  let T = 0, M = 0;
+  sheets.forEach(n => { const s = stat(n); if (s) { T += s.total; M += s.m; } });
   const op = T ? Math.round(M / T * 100) : 0;
   let h = '';
   if (sheets.length) h += `<div class="card"><div class="row sb"><b>Kesiapan keseluruhan</b><span class="pct">${op}%</span></div><div class="bar"><i style="width:${op}%"></i></div><div class="mut" style="margin-top:6px">${sheets.length} mata kuliah · ${T} soal. Soal dihitung dikuasai jika jawaban terakhirmu benar.</div></div>`;
