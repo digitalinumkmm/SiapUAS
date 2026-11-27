@@ -45,7 +45,7 @@ code{background:var(--bg);padding:1px 5px;border-radius:5px;font-size:13px}
 <body>
 <div class="wrap">
   <header>
-    <div><h1>Portal UAS Interaktif</h1><p>Latihan soal & pantau penguasaan per mata kuliah</p><p id="sync" style="font-size:12px;margin-top:4px"></p></div>
+    <div><h1>Portal UAS Interaktif</h1><p>Latihan soal & pantau penguasaan per mata kuliah</p><p id="sync" onclick="loadProgress()" style="font-size:12px;margin-top:4px;cursor:pointer" title="Klik untuk sinkron ulang">Menyinkronkan...</p></div>
     <button onclick="openUpload()">+ Upload Soal Baru</button>
   </header>
   <main id="app"></main>
@@ -58,6 +58,8 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const nice = n => String(n).replace(/_/g, ' ');
+// Sheet bernama otomatis Google Sheets (Sheet1, Sheet400, dst) tidak ditampilkan sebagai mata kuliah
+const isAuto = n => /^Sheet\d+$/i.test(String(n).trim());
 
 let sheets = [], cache = {}, V = { v: 'home' }, Q = null, prog = {}, hidden = [], hist = [], pending = {}, pendS = [];
 try {
@@ -69,12 +71,23 @@ const saveP = () => { try { localStorage.setItem('uas_progress_v1', JSON.stringi
 const saveH = () => { try { localStorage.setItem('uas_hidden_v1', JSON.stringify(hidden)); } catch (e) {} };
 const saveHist = () => { try { localStorage.setItem('uas_hist_v1', JSON.stringify(hist.slice(-500))); } catch (e) {} };
 const qkey = q => q.id + ':' + String(q.soal).slice(0, 40);
-async function api(p) { const r = await fetch(API_URL + '?' + p); return r.json(); }
+
+async function parseResp(r) {
+  const t = await r.text();
+  try { return JSON.parse(t); } catch (e) { throw new Error('Respons server bukan JSON. Pastikan deployment: Who has access = Anyone'); }
+}
+async function api(p) { const r = await fetch(API_URL + '?' + p); return parseResp(r); }
 async function post(body) {
   const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) });
-  const j = await r.json();
-  if (j.status !== 'success') throw new Error(j.message || 'gagal');
+  const j = await parseResp(r);
+  if (j.status !== 'success') throw new Error(j.message || 'gagal menyimpan');
   return j;
+}
+
+/* ---------- status sinkron ---------- */
+function setSync(ok, msg) {
+  const e = $('#sync'); if (!e) return;
+  e.textContent = ok ? '☁️ Progres & riwayat tersimpan di Google Sheets' : '⚠️ Hanya tersimpan di perangkat ini: ' + (msg || 'gagal terhubung') + ' (klik untuk coba lagi)';
 }
 
 /* ---------- data ---------- */
@@ -82,14 +95,20 @@ async function loadSheets() {
   $('#app').innerHTML = '<div class="card center">Memuat daftar mata kuliah...</div>';
   try {
     const j = await api('action=getSheets');
-    if (j.status !== 'success') throw new Error();
-    sheets = j.sheets.filter(n => !hidden.includes(n) && !String(n).startsWith('_'));
+    if (j.status !== 'success') throw new Error(j.message || 'getSheets gagal');
+    sheets = j.sheets.filter(n => !hidden.includes(n) && !String(n).startsWith('_') && !isAuto(n));
     render();
     loadProgress();
-    sheets.forEach(n => loadQ(n));
+    loadAll();
   } catch (e) {
-    $('#app').innerHTML = '<div class="card center">Gagal memuat daftar mata kuliah.<br><br><button class="pri" onclick="loadSheets()">Coba lagi</button></div>';
+    $('#app').innerHTML = '<div class="card center">Gagal memuat daftar mata kuliah.<br><span class="mut">' + esc(e.message) + '</span><br><br><button class="pri" onclick="loadSheets()">Coba lagi</button></div>';
   }
+}
+// Muat soal maksimal 3 sekaligus supaya Apps Script tidak kebanjiran
+async function loadAll() {
+  const queue = sheets.slice();
+  const worker = async () => { while (queue.length) await loadQ(queue.shift()); };
+  await Promise.all([worker(), worker(), worker()]);
 }
 async function loadQ(n, force) {
   if (cache[n] && !force) return;
@@ -111,13 +130,16 @@ function level(p, t) {
 }
 
 /* ---------- sinkron progres ke Google Sheets ---------- */
-function setSync(ok) { const e = $('#sync'); if (e) e.textContent = ok ? '☁️ Progres & riwayat tersimpan di Google Sheets' : '⚠️ Progres hanya tersimpan di perangkat ini (Apps Script belum diperbarui / offline)'; }
-
-// Menggabungkan data lokal (browser) dengan data server. Yang lebih banyak percobaannya dipakai.
+// Menggabungkan data lokal (browser) dengan data server. Yang percobaannya lebih banyak dipakai.
+let syncing = false;
 async function loadProgress() {
+  if (syncing) return;
+  syncing = true;
+  const el = $('#sync'); if (el) el.textContent = 'Menyinkronkan...';
   try {
     let j = await api('action=getProgress');
-    if (j.status !== 'success' || !j.progress) throw new Error();
+    if (!j.version) throw new Error('Deployment Apps Script masih versi LAMA. Lakukan Deploy > Manage deployments > New version');
+    if (j.status !== 'success' || !j.progress) throw new Error(j.message || 'getProgress gagal');
     const sp = j.progress, ups = [];
     Object.keys(prog).forEach(m => Object.keys(prog[m]).forEach(k => {
       const l = prog[m][k], s = sp[m] && sp[m][k];
@@ -134,7 +156,7 @@ async function loadProgress() {
         first = false;
       }
       j = await api('action=getProgress');
-      if (j.status !== 'success' || !j.progress) throw new Error();
+      if (j.status !== 'success' || !j.progress) throw new Error(j.message || 'getProgress gagal');
     }
     prog = j.progress;
     const seen = new Set(), merged = [];
@@ -142,7 +164,8 @@ async function loadProgress() {
     hist = merged.sort((a, b) => a.t - b.t);
     saveP(); saveHist();
     setSync(true);
-  } catch (e) { setSync(false); }
+  } catch (e) { setSync(false, e.message); }
+  syncing = false;
   if (V.v === 'home') render();
 }
 async function flush() {
@@ -151,9 +174,9 @@ async function flush() {
   pending = {}; pendS = [];
   try {
     const r = await fetch(API_URL, { method: 'POST', keepalive: true, body: JSON.stringify({ action: 'saveProgress', updates: ups, sessions: ss }) });
-    const j = await r.json(); if (j.status !== 'success') throw new Error();
+    const j = await parseResp(r); if (j.status !== 'success') throw new Error(j.message || 'gagal menyimpan');
     setSync(true);
-  } catch (e) { ups.forEach(u => { pending[u.matkul + '||' + u.key] = u; }); pendS = ss.concat(pendS); setSync(false); }
+  } catch (e) { ups.forEach(u => { pending[u.matkul + '||' + u.key] = u; }); pendS = ss.concat(pendS); setSync(false, e.message); }
 }
 function finishSession() {
   if (!Q || !Q.res.length) return;
@@ -294,6 +317,7 @@ function openUpload() {
 function processUpload() {
   const name = $('#up-name').value.trim().replace(/\s+/g, '_'), f = $('#up-file').files[0], m = $('#up-msg');
   if (!name) { m.style.color = 'var(--no)'; m.textContent = 'Masukkan nama mata kuliah dulu.'; return; }
+  if (isAuto(name)) { m.style.color = 'var(--no)'; m.textContent = 'Nama seperti "Sheet123" disembunyikan portal. Pakai nama lain.'; return; }
   if (!f) { m.style.color = 'var(--no)'; m.textContent = 'Pilih file soal dulu.'; return; }
   const btn = $('#up-btn'); btn.disabled = true; btn.textContent = 'Mengunggah...';
   const rd = new FileReader();
@@ -302,7 +326,7 @@ function processUpload() {
       const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
       const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
       const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ matkul: name, questions: data }) });
-      const j = await r.json();
+      const j = await parseResp(r);
       if (j.status === 'success') { delete cache[name]; closeModal(); loadSheets(); }
       else { m.style.color = 'var(--no)'; m.textContent = 'Gagal upload: ' + j.message; btn.disabled = false; btn.textContent = 'Unggah Sekarang'; }
     } catch (err) { m.style.color = 'var(--no)'; m.textContent = 'Terjadi kesalahan saat mengunggah.'; btn.disabled = false; btn.textContent = 'Unggah Sekarang'; }
